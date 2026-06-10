@@ -5,13 +5,15 @@ import '../../services/printer_service.dart';
 
 /// Stock-In Detail Screen matching MSIC_FE web frontend styling
 class StockInDetailScreen extends StatefulWidget {
-  final String doNumber;
+  final int stockInId;
+  final String stockInNumber;
   final String supplierName;
   final String receiveDate;
 
   const StockInDetailScreen({
     super.key,
-    required this.doNumber,
+    required this.stockInId,
+    required this.stockInNumber,
     required this.supplierName,
     required this.receiveDate,
   });
@@ -57,21 +59,20 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
   Future<void> _load() async {
     setState(() => _loading = true);
 
-    final detail = await _api.getStockInDetail(
+    final response = await _api.getStockInDetail(
       context,
-      doNumber: widget.doNumber,
+      id: widget.stockInId,
     );
 
     setState(() {
-      _rows = detail;
-      if (detail.isNotEmpty) {
-        final first = detail.first;
+      if (response != null && response['data'] != null) {
+        final data = response['data'] as Map<String, dynamic>;
+        _rows = List<Map<String, dynamic>>.from(data['lines'] ?? []);
         _header = {
-          'DO_Number': widget.doNumber,
-          'SupplierName':
-              first['Supplier']?['SupplierName'] ?? widget.supplierName,
-          'PIC': first['PIC']?['FullName'] ?? '-',
-          'ReceiveDate': first['ReceiveDate'] ?? widget.receiveDate,
+          'DO_Number': data['stock_in_number'] ?? widget.stockInNumber,
+          'SupplierName': data['supplier_name'] ?? widget.supplierName,
+          'ReceiveDate': data['stock_in_date'] ?? widget.receiveDate,
+          'PIC': '-', // Add PIC if SIO_BE adds it later
         };
       }
       _loading = false;
@@ -83,9 +84,9 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
     final Map<int, Map<String, dynamic>> groups = {};
 
     for (var row in _rows) {
-      final productId = row['Product']?['ProductID'] ?? row['ProductID'] ?? 0;
-      final productName = row['Product']?['ProductName'] ?? '-';
-      final refNum = row['Product']?['RefNum'];
+      final productId = row['product_id'] ?? 0;
+      final productName = row['product_name'] ?? '-';
+      final refNum = row['product_code'];
 
       if (!groups.containsKey(productId)) {
         groups[productId] = {
@@ -99,9 +100,9 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
 
       groups[productId]!['Items'].add(row);
 
-      final lots = row['Lots'] as List? ?? [];
-      for (var lot in lots) {
-        groups[productId]!['Lots'].add(Map<String, dynamic>.from(lot));
+      final items = row['stock_items'] as List? ?? [];
+      for (var item in items) {
+        groups[productId]!['Lots'].add(Map<String, dynamic>.from(item));
       }
     }
 
@@ -110,14 +111,14 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
 
   int get _totalQty => _rows.fold<int>(
     0,
-    (sum, row) => sum + (int.tryParse('${row['QuantityReceived'] ?? 0}') ?? 0),
+    (sum, row) => sum + (int.tryParse('${row['received_qty'] ?? 0}') ?? 0),
   );
 
   int get _totalLots {
     int count = 0;
     for (var row in _rows) {
-      final lots = row['Lots'] as List? ?? [];
-      count += lots.length;
+      final items = row['stock_items'] as List? ?? [];
+      count += items.length;
     }
     return count > 0 ? count : _totalQty;
   }
@@ -161,68 +162,34 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
   }
 
   Future<void> _onPrint() async {
-    final allLots = <Map<String, dynamic>>[];
+    final generatedItems = <Map<String, dynamic>>[];
 
     for (var row in _rows) {
-      final productName = row['Product']?['ProductName'] ?? '-';
-      final refNum = row['Product']?['RefNum'] ?? '';
-      final lots = row['Lots'] as List? ?? [];
+      final productName = row['product_name'] ?? '-';
+      final refNum = row['product_code'] ?? '';
+      final items = row['stock_items'] as List? ?? [];
 
-      for (var lot in lots) {
-        allLots.add({
-          'medicine_name': productName,
-          'reference_number': refNum,
-          'expiry_date': lot['ExpiryDate'] ?? '',
-          'lot_number': lot['LotNumber'] ?? '',
-        });
+      for (var item in items) {
+        if (item['serial_source'] == 'GENERATED') {
+          generatedItems.add({
+            'medicine_name': productName,
+            'reference_number': refNum,
+            'expiry_date': '', // SIO_BE doesn't seem to have expiry at item level
+            'lot_number': item['serial_number'] ?? '',
+          });
+        }
       }
     }
 
-    if (allLots.isEmpty) {
-      _showSnack('No lots available to print.');
+    if (generatedItems.isEmpty) {
+      _showSnack('No generated serial numbers to print.');
       return;
     }
 
     try {
-      await PrinterService.printAllLots(context, allLots);
+      await PrinterService.printAllLots(context, generatedItems);
     } catch (e) {
       _showSnack('Print failed: $e');
-    }
-  }
-
-  Future<void> _onDelete() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete DO'),
-        content: Text(
-          'Delete ${widget.doNumber} and all related lots?\n\nThis action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancel', style: TextStyle(color: _gray500)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      setState(() => _loading = true);
-      final success = await _api.deleteStockInDo(context, widget.doNumber);
-      if (success) {
-        if (!mounted) return;
-        _showSnack('Deleted successfully.');
-        Navigator.of(context).pop(true);
-      } else {
-        setState(() => _loading = false);
-      }
     }
   }
 
@@ -249,7 +216,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          widget.doNumber,
+          widget.stockInNumber,
           style: const TextStyle(
             color: _gray900,
             fontWeight: FontWeight.w600,
@@ -263,13 +230,6 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
             color: _indigo600,
             tooltip: 'Print Labels',
           ),
-          if (_isAdmin)
-            IconButton(
-              onPressed: _onDelete,
-              icon: const Icon(Icons.delete_outline),
-              color: Colors.red,
-              tooltip: 'Delete',
-            ),
         ],
       ),
       body: _loading
@@ -295,7 +255,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
             spacing: 20,
             runSpacing: 12,
             children: [
-              _headerItem(Icons.description_outlined, 'DO: ${widget.doNumber}'),
+              _headerItem(Icons.description_outlined, 'DO: ${widget.stockInNumber}'),
               _headerItem(
                 Icons.apartment,
                 _header['SupplierName'] ?? widget.supplierName,
@@ -528,7 +488,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
             ...lots.asMap().entries.map((entry) {
               final i = entry.key;
               final lot = entry.value;
-              final status = lot['Status'] ?? 'Unknown';
+              final status = lot['current_status'] ?? 'Unknown';
               return Container(
                 color: i.isEven ? Colors.white : _slate50,
                 padding: const EdgeInsets.symmetric(
@@ -540,7 +500,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
                     Expanded(
                       flex: 3,
                       child: Text(
-                        lot['LotNumber'] ?? '-',
+                        lot['serial_number'] ?? '-',
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
@@ -558,7 +518,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
                     Expanded(
                       flex: 2,
                       child: Text(
-                        lot['ExpiryDate']?.toString().split('T').first ?? '-',
+                        '-',
                         style: const TextStyle(fontSize: 13, color: _gray700),
                       ),
                     ),
@@ -593,7 +553,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Batch: $batchDisplay • Qty: ${items.fold<int>(0, (s, i) => s + (int.tryParse('${i['QuantityReceived'] ?? 0}') ?? 0))}',
+                'Batch: $batchDisplay • Qty: ${items.fold<int>(0, (s, i) => s + (int.tryParse('${i['received_qty'] ?? 0}') ?? 0))}',
                 style: TextStyle(color: _gray500),
               ),
             ),

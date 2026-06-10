@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'MSIC Mobile',
+      title: 'SIO Mobile',
       theme: ThemeData(
         primaryColor: AppTheme.indigo600,
         colorScheme: ColorScheme.fromSeed(

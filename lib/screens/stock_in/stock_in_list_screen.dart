@@ -52,29 +52,20 @@ class _StockInListScreenState extends State<StockInListScreen> {
       toDate: _to == null ? null : _df.format(_to!),
     );
 
-    // Group by DO_Number
     final list = result['data'] as List? ?? [];
-    final Map<String, List<Map<String, dynamic>>> grouped = {};
-
-    for (var item in list) {
-      final doNum = item['DO_Number']?.toString() ?? 'UNKNOWN';
-      grouped.putIfAbsent(doNum, () => []).add(Map<String, dynamic>.from(item));
-    }
-
-    final formatted = grouped.entries.map((entry) {
-      final items = entry.value;
-      final first = items.first;
+    final formatted = list.map((item) {
+      final itemMap = Map<String, dynamic>.from(item);
+      final lines = itemMap['lines'] as List? ?? [];
       return {
-        'DO_Number': entry.key,
-        'supplier': first['supplier'] ?? {},
-        'ReceiveDate': first['ReceiveDate'],
-        'TotalProducts': items.length,
-        'TotalQuantity': items.fold<int>(
+        'id': itemMap['id'],
+        'DO_Number': itemMap['stock_in_number'],
+        'supplier': {'SupplierName': itemMap['supplier_name']},
+        'ReceiveDate': itemMap['stock_in_date'],
+        'TotalProducts': lines.length,
+        'TotalQuantity': lines.fold<int>(
           0,
-          (sum, it) =>
-              sum + (int.tryParse('${it['QuantityReceived'] ?? 0}') ?? 0),
+          (sum, it) => sum + (int.tryParse('${it['received_qty'] ?? 0}') ?? 0),
         ),
-        'items': items,
       };
     }).toList();
 
@@ -142,7 +133,8 @@ class _StockInListScreenState extends State<StockInListScreen> {
     final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => StockInDetailScreen(
-          doNumber: group['DO_Number'] ?? '',
+          stockInId: group['id'] ?? 0,
+          stockInNumber: group['DO_Number'] ?? '',
           supplierName: group['supplier']?['SupplierName'] ?? '-',
           receiveDate: group['ReceiveDate'] ?? '-',
         ),

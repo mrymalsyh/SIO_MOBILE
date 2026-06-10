@@ -6,10 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 class ApiService {
-  // Base URLs
-  static const String _prodBaseUrl = 'https://msic.mysztechnology.com/api';
-  static const String _devBaseUrl = 'http://msic_be.test/api';
-  static const bool _useProd = true;
+  static const String _prodBaseUrl = 'http://10.0.2.2:8000/api';
+  static const String _devBaseUrl = 'http://10.0.2.2:8000/api';
+  static const bool _useProd = false;
 
   static String get _baseUrl => _useProd ? _prodBaseUrl : _devBaseUrl;
 
@@ -283,7 +282,7 @@ class ApiService {
 
     try {
       final res = await _mainDio.get(
-        '/stock-in',
+        '/stock-ins',
         queryParameters: query,
         options: Options(headers: headers),
       );
@@ -307,41 +306,35 @@ class ApiService {
     }
   }
 
-  /// Get Stock-In detail by DO number (uses main API)
-  Future<List<Map<String, dynamic>>> getStockInDetail(
+  /// Get Stock-In detail by ID (uses main API)
+  Future<Map<String, dynamic>?> getStockInDetail(
     BuildContext context, {
-    required String doNumber,
+    required int id,
   }) async {
     if (!await _hasConnection()) {
       _snack(context, 'No internet connection.');
-      return [];
+      return null;
     }
     if (!await _isBackendReachable()) {
       _snack(context, 'Cannot reach server.');
-      return [];
+      return null;
     }
 
     final headers = await _authHeaders();
 
     try {
       final res = await _mainDio.get(
-        '/stock-in',
-        queryParameters: {'do': doNumber},
+        '/stock-ins/$id',
         options: Options(headers: headers),
       );
-      final payload = res.data;
-
-      if (payload is List) {
-        return List<Map<String, dynamic>>.from(payload);
-      }
-      return [];
+      return res.data is Map ? Map<String, dynamic>.from(res.data) : null;
     } on DioException catch (e) {
       _snack(
         context,
         e.response?.data?['message']?.toString() ??
             'Failed to load DO details.',
       );
-      return [];
+      return null;
     }
   }
 
@@ -365,16 +358,22 @@ class ApiService {
 
     final headers = await _authHeaders();
     final payload = {
-      'DO_Number': doNumber,
-      'SupplierID': supplierId,
-      'PIC_ID': picId,
-      'ReceiveDate': receiveDate,
-      'Items': items,
+      'stock_in_number': doNumber,
+      'supplier_id': supplierId,
+      'stock_in_date': receiveDate,
+      'lines': items.map((item) {
+        return {
+          'product_id': item['ProductID'],
+          'received_qty': item['QuantityReceived'],
+          'remarks': item['Remarks'] ?? '',
+          'allow_generated_serials': true,
+        };
+      }).toList(),
     };
 
     try {
       final res = await _mainDio.post(
-        '/stock-in',
+        '/stock-ins',
         data: payload,
         options: Options(headers: headers),
       );
@@ -570,288 +569,4 @@ class ApiService {
     }
   }
 
-  // ========== STOCK-OUT API METHODS ==========
-
-  /// Get Stock-Out list with filters
-  Future<Map<String, dynamic>> getStockOutListFull(
-    BuildContext context, {
-    int page = 1,
-    String? search,
-    int? clientId,
-    String? status,
-    String? fromDate,
-    String? toDate,
-  }) async {
-    if (!await _hasConnection()) {
-      _snack(context, 'No internet connection.');
-      return {'data': [], 'current_page': 1, 'last_page': 1};
-    }
-    if (!await _isBackendReachable()) {
-      _snack(context, 'Cannot reach server.');
-      return {'data': [], 'current_page': 1, 'last_page': 1};
-    }
-
-    final headers = await _authHeaders();
-    final query = <String, dynamic>{
-      'page': page,
-      if (search != null && search.isNotEmpty) 'consignment_no': search,
-      if (clientId != null) 'client_id': clientId,
-      if (status != null && status.isNotEmpty) 'status': status,
-      if (fromDate != null && fromDate.isNotEmpty) 'date_from': fromDate,
-      if (toDate != null && toDate.isNotEmpty) 'date_to': toDate,
-    };
-
-    try {
-      final res = await _mainDio.get(
-        '/stock-out',
-        queryParameters: query,
-        options: Options(headers: headers),
-      );
-      final payload = res.data;
-      if (payload is Map) {
-        return {
-          'data': payload['data'] ?? [],
-          'current_page': payload['current_page'] ?? 1,
-          'last_page': payload['last_page'] ?? 1,
-        };
-      }
-      return {'data': [], 'current_page': 1, 'last_page': 1};
-    } on DioException catch (e) {
-      _snack(
-        context,
-        e.response?.data?['message']?.toString() ??
-            'Failed to load Stock-Out list.',
-      );
-      return {'data': [], 'current_page': 1, 'last_page': 1};
-    }
-  }
-
-  /// Get Stock-Out detail by ID
-  Future<Map<String, dynamic>?> getStockOutDetail(
-    BuildContext context, {
-    required int stockOutId,
-  }) async {
-    if (!await _hasConnection()) {
-      _snack(context, 'No internet connection.');
-      return null;
-    }
-    if (!await _isBackendReachable()) {
-      _snack(context, 'Cannot reach server.');
-      return null;
-    }
-
-    final headers = await _authHeaders();
-
-    try {
-      final res = await _mainDio.get(
-        '/stock-out/$stockOutId',
-        options: Options(headers: headers),
-      );
-      return res.data is Map ? Map<String, dynamic>.from(res.data) : null;
-    } on DioException catch (e) {
-      _snack(
-        context,
-        e.response?.data?['message']?.toString() ??
-            'Failed to load Stock-Out detail.',
-      );
-      return null;
-    }
-  }
-
-  /// Create Stock-Out draft
-  Future<Map<String, dynamic>?> createStockOut(
-    BuildContext context, {
-    required String consignmentNumber,
-    required int clientId,
-    required int picId,
-    int? checkerId,
-    required String stockOutDate,
-    String? remarks,
-  }) async {
-    if (!await _hasConnection()) {
-      _snack(context, 'No internet connection.');
-      return null;
-    }
-    if (!await _isBackendReachable()) {
-      _snack(context, 'Cannot reach server.');
-      return null;
-    }
-
-    final headers = await _authHeaders();
-
-    try {
-      final res = await _mainDio.post(
-        '/stock-out',
-        data: {
-          'ConsignmentNumber': consignmentNumber,
-          'ClientID': clientId,
-          'PIC_ID': picId,
-          if (checkerId != null) 'Checker_ID': checkerId,
-          'StockOutDate': stockOutDate,
-          if (remarks != null && remarks.isNotEmpty) 'Remarks': remarks,
-        },
-        options: Options(headers: headers),
-      );
-      return res.data is Map ? Map<String, dynamic>.from(res.data) : null;
-    } on DioException catch (e) {
-      final errMsg =
-          e.response?.data?['message']?.toString() ??
-          e.response?.data?['errors']?['ConsignmentNumber']?.first
-              ?.toString() ??
-          'Failed to create Stock-Out.';
-      _snack(context, errMsg);
-      return null;
-    }
-  }
-
-  /// Add lot to Stock-Out
-  Future<bool> addLotToStockOut(
-    BuildContext context, {
-    required int stockOutId,
-    required String lotNumber,
-  }) async {
-    if (!await _hasConnection()) {
-      _snack(context, 'No internet connection.');
-      return false;
-    }
-    if (!await _isBackendReachable()) {
-      _snack(context, 'Cannot reach server.');
-      return false;
-    }
-
-    final headers = await _authHeaders();
-
-    try {
-      await _mainDio.post(
-        '/stock-out/$stockOutId/details',
-        data: {'LotNumber': lotNumber},
-        options: Options(headers: headers),
-      );
-      return true;
-    } on DioException catch (e) {
-      _snack(
-        context,
-        e.response?.data?['message']?.toString() ?? 'Failed to add lot.',
-      );
-      return false;
-    }
-  }
-
-  /// Remove lot from Stock-Out
-  Future<bool> removeLotFromStockOut(
-    BuildContext context, {
-    required int stockOutId,
-    required int detailId,
-  }) async {
-    if (!await _hasConnection()) {
-      _snack(context, 'No internet connection.');
-      return false;
-    }
-    if (!await _isBackendReachable()) {
-      _snack(context, 'Cannot reach server.');
-      return false;
-    }
-
-    final headers = await _authHeaders();
-
-    try {
-      await _mainDio.delete(
-        '/stock-out/details/$detailId',
-        options: Options(headers: headers),
-      );
-      return true;
-    } on DioException catch (e) {
-      _snack(
-        context,
-        e.response?.data?['message']?.toString() ?? 'Failed to remove lot.',
-      );
-      return false;
-    }
-  }
-
-  /// Confirm Stock-Out (change status from Draft to Supplied)
-  Future<bool> confirmStockOut(
-    BuildContext context, {
-    required int stockOutId,
-  }) async {
-    if (!await _hasConnection()) {
-      _snack(context, 'No internet connection.');
-      return false;
-    }
-    if (!await _isBackendReachable()) {
-      _snack(context, 'Cannot reach server.');
-      return false;
-    }
-
-    final headers = await _authHeaders();
-
-    try {
-      await _mainDio.post(
-        '/stock-out/$stockOutId/confirm',
-        options: Options(headers: headers),
-      );
-      return true;
-    } on DioException catch (e) {
-      _snack(
-        context,
-        e.response?.data?['message']?.toString() ??
-            'Failed to confirm Stock-Out.',
-      );
-      return false;
-    }
-  }
-
-  /// Delete Stock-Out (admin only)
-  Future<bool> deleteStockOut(
-    BuildContext context, {
-    required int stockOutId,
-  }) async {
-    if (!await _hasConnection()) {
-      _snack(context, 'No internet connection.');
-      return false;
-    }
-    if (!await _isBackendReachable()) {
-      _snack(context, 'Cannot reach server.');
-      return false;
-    }
-
-    final headers = await _authHeaders();
-
-    try {
-      await _mainDio.delete(
-        '/stock-out/$stockOutId',
-        options: Options(headers: headers),
-      );
-      return true;
-    } on DioException catch (e) {
-      _snack(
-        context,
-        e.response?.data?['message']?.toString() ??
-            'Failed to delete Stock-Out.',
-      );
-      return false;
-    }
-  }
-
-  /// Validate lot number for Stock-Out
-  Future<Map<String, dynamic>?> validateLot(
-    BuildContext context, {
-    required String lotNumber,
-  }) async {
-    if (!await _hasConnection()) return null;
-    if (!await _isBackendReachable()) return null;
-
-    final headers = await _authHeaders();
-
-    try {
-      final res = await _mainDio.get(
-        '/lot-numbers/validate',
-        queryParameters: {'lot_number': lotNumber},
-        options: Options(headers: headers),
-      );
-      return res.data is Map ? Map<String, dynamic>.from(res.data) : null;
-    } catch (_) {
-      return null;
-    }
-  }
 }

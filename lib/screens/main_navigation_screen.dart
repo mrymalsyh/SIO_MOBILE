@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'stock_in/stock_in_list_screen.dart';
-import 'stock_out/stock_out_list_screen.dart';
 import 'settings/settings_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -19,7 +18,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   final List<Widget> _screens = const [
     StockInListScreen(),
-    StockOutListScreen(),
     SettingsScreen(),
   ];
 
@@ -28,11 +26,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       icon: Icon(Icons.move_to_inbox_outlined),
       activeIcon: Icon(Icons.move_to_inbox),
       label: 'Stock-In',
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.outbox_outlined),
-      activeIcon: Icon(Icons.outbox),
-      label: 'Stock-Out',
     ),
     BottomNavigationBarItem(
       icon: Icon(Icons.settings_outlined),
