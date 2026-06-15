@@ -50,7 +50,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
   }
 
   Future<void> _checkRole() async {
-    final prefs = await SharedPreferences.getInstance();
+    await SharedPreferences.getInstance();
   }
 
   Future<void> _load() async {
@@ -80,14 +80,14 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
     for (var row in _rows) {
       final productId = row['product_id'] ?? 0;
       final productName = row['product_name'] ?? '-';
-      final refNum = row['product_code'];
+      final productCode = row['product_code'];
 
       if (!groups.containsKey(productId)) {
         groups[productId] = {
           'ProductID': productId,
           'ProductName': productName,
-          'RefNum': refNum,
-          'Lots': <Map<String, dynamic>>[],
+          'ProductCode': productCode,
+          'Serials': <Map<String, dynamic>>[],
           'Items': <Map<String, dynamic>>[],
         };
       }
@@ -96,7 +96,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
 
       final items = row['stock_items'] as List? ?? [];
       for (var item in items) {
-        groups[productId]!['Lots'].add(Map<String, dynamic>.from(item));
+        groups[productId]!['Serials'].add(Map<String, dynamic>.from(item));
       }
     }
 
@@ -108,7 +108,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
     (sum, row) => sum + (int.tryParse('${row['received_qty'] ?? 0}') ?? 0),
   );
 
-  int get _totalLots {
+  int get _totalSerials {
     int count = 0;
     for (var row in _rows) {
       final items = row['stock_items'] as List? ?? [];
@@ -160,17 +160,17 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
 
     for (var row in _rows) {
       final productName = row['product_name'] ?? '-';
-      final refNum = row['product_code'] ?? '';
+      final productCode = row['product_code'] ?? '';
       final items = row['stock_items'] as List? ?? [];
 
       for (var item in items) {
         if (item['serial_source'] == 'GENERATED') {
           generatedItems.add({
             'medicine_name': productName,
-            'reference_number': refNum,
+            'product_code': productCode,
             'expiry_date':
                 '', // SIO_BE doesn't seem to have expiry at item level
-            'lot_number': item['serial_number'] ?? '',
+            'serial_number': item['serial_number'] ?? '',
           });
         }
       }
@@ -182,7 +182,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
     }
 
     try {
-      await PrinterService.printAllLots(context, generatedItems);
+      await PrinterService.printAllSerials(context, generatedItems);
     } catch (e) {
       _showSnack('Print failed: $e');
     }
@@ -232,7 +232,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
           : Column(
               children: [
                 _buildHeader(),
-                Expanded(child: _buildLotsList()),
+                Expanded(child: _buildSerialsList()),
               ],
             ),
     );
@@ -283,8 +283,8 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
               const SizedBox(width: 12),
               _buildStatChip(
                 icon: Icons.tag,
-                label: 'Lots',
-                value: _totalLots.toString(),
+                label: 'Serials',
+                value: _totalSerials.toString(),
                 color: const Color(0xFF22C55E),
                 bgColor: const Color(0xFFDCFCE7),
               ),
@@ -338,7 +338,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
     );
   }
 
-  Widget _buildLotsList() {
+  Widget _buildSerialsList() {
     if (_rows.isEmpty) {
       return Center(
         child: Column(
@@ -371,8 +371,8 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
 
   Widget _buildProductCard(Map<String, dynamic> group) {
     final productName = group['ProductName'] ?? '-';
-    final refNum = group['RefNum'];
-    final lots = group['Lots'] as List<Map<String, dynamic>>? ?? [];
+    final productCode = group['ProductCode'];
+    final serials = group['Serials'] as List<Map<String, dynamic>>? ?? [];
     final items = group['Items'] as List<Map<String, dynamic>>? ?? [];
 
     final batches = items
@@ -421,9 +421,9 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
                           color: _gray900,
                         ),
                       ),
-                      if (refNum != null)
+                      if (productCode != null)
                         Text(
-                          'Ref: $refNum',
+                          'Code: $productCode',
                           style: TextStyle(fontSize: 12, color: _gray500),
                         ),
                     ],
@@ -439,7 +439,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '${lots.isEmpty ? items.fold<int>(0, (s, i) => s + (int.tryParse('${i['QuantityReceived'] ?? 0}') ?? 0)) : lots.length} lot(s)',
+                    '${serials.isEmpty ? items.fold<int>(0, (s, i) => s + (int.tryParse('${i['QuantityReceived'] ?? 0}') ?? 0)) : serials.length} serial(s)',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
@@ -458,7 +458,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
               children: [
                 Expanded(
                   flex: 3,
-                  child: Text('Lot Number', style: _tableHeaderStyle),
+                  child: Text('Serial Number', style: _tableHeaderStyle),
                 ),
                 Expanded(
                   flex: 2,
@@ -481,12 +481,12 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
           ),
           const Divider(height: 1, color: _gray200),
 
-          // Lots rows
-          if (lots.isNotEmpty)
-            ...lots.asMap().entries.map((entry) {
+          // Serials rows
+          if (serials.isNotEmpty)
+            ...serials.asMap().entries.map((entry) {
               final i = entry.key;
-              final lot = entry.value;
-              final status = lot['current_status'] ?? 'Unknown';
+              final serial = entry.value;
+              final status = serial['current_status'] ?? 'Unknown';
               return Container(
                 color: i.isEven ? Colors.white : _slate50,
                 padding: const EdgeInsets.symmetric(
@@ -498,7 +498,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
                     Expanded(
                       flex: 3,
                       child: Text(
-                        lot['serial_number'] ?? '-',
+                        serial['serial_number'] ?? '-',
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,

@@ -950,9 +950,9 @@ class _ProductSearchFieldState extends State<_ProductSearchField> {
                     product['ProductName'] ?? '-',
                     style: const TextStyle(fontSize: 14, color: _gray900),
                   ),
-                  subtitle: product['RefNum'] != null
-                      ? Text(
-                          'Ref: ${product['RefNum']}',
+                  subtitle: product['ProductCode'] != null
+                    ? Text(
+                        'ProdCode: ${product['ProductCode']}',
                           style: TextStyle(fontSize: 12, color: _gray500),
                         )
                       : null,

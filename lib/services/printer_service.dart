@@ -4,9 +4,7 @@ import '../services/bluetooth_service.dart';
 class PrinterService {
   static String buildTSPLLabel({
     required String medicineName,
-    required String referenceNumber,
-    required String expiryDate,
-    required String lotNumber,
+    required String serialNumber,
   }) {
     return '''
 SIZE 40 mm,30 mm
@@ -16,11 +14,9 @@ SPEED 4
 DIRECTION 1
 REFERENCE 0,0
 CLS
-TEXT 25,10,"3",0,1,1,"$medicineName"
-TEXT 25,40,"3",0,1,1,"Ref: $referenceNumber"
-TEXT 25,70,"3",0,1,1,"Exp: $expiryDate"
-BARCODE 35,100,"128",60,0,0,1,1,"$lotNumber"
-TEXT 35,170,"2",0,1,1,"$lotNumber"
+TEXT 25,20,"2",0,1,1,"$medicineName"
+BARCODE 35,70,"128",60,0,0,1,1,"$serialNumber"
+TEXT 35,140,"2",0,1,1,"$serialNumber"
 PRINT 1
 ''';
   }
@@ -28,13 +24,8 @@ PRINT 1
   /// Test print
   static Future<void> testPrint(BuildContext context) async {
     try {
-      const med = 'UBAT STRESS 100MG';
-      const ref = '130205';
-      const lot = 'MAC-AMN-A132-0143';
-      final exp = DateTime.now()
-          .add(const Duration(days: 365))
-          .toString()
-          .split(' ')[0];
+      const med = 'THERMAL PRINTER USB BLUETOOTH AUTOCUT (80MM)';
+      const serial = 'TP80-USBBT-20260615-0001';
 
       final cmd =
           '''
@@ -45,11 +36,9 @@ SPEED 4
 DIRECTION 1
 REFERENCE 0,0
 CLS
-TEXT 25,10,"3",0,1,1,"$med"
-TEXT 25,40,"3",0,1,1,"Ref: $ref"
-TEXT 25,70,"3",0,1,1,"Exp: $exp"
-BARCODE 55,100,"128",60,0,0,1,1,"$lot"
-TEXT 35 ,170,"2",0,1,1,"$lot"
+TEXT 25,20,"2",0,1,1,"$med"
+BARCODE 35,70,"128",60,0,0,1,1,"$serial"
+TEXT 35,140,"2",0,1,1,"$serial"
 PRINT 1
 ''';
 
@@ -69,18 +58,16 @@ PRINT 1
     }
   }
 
-  /// Print list of lot labels
-  static Future<void> printAllLots(
+  /// Print list of serial labels
+  static Future<void> printAllSerials(
     BuildContext context,
-    List<Map<String, dynamic>> lotList,
+    List<Map<String, dynamic>> serialList,
   ) async {
     try {
-      for (final lot in lotList) {
+      for (final serial in serialList) {
         final cmd = buildTSPLLabel(
-          medicineName: lot['medicine_name'] ?? '',
-          referenceNumber: lot['reference_number'] ?? '',
-          expiryDate: lot['expiry_date'] ?? '',
-          lotNumber: lot['lot_number'] ?? '',
+          medicineName: serial['medicine_name'] ?? '',
+          serialNumber: serial['serial_number'] ?? '',
         );
         await BluetoothService.sendCommand(cmd);
         await Future.delayed(const Duration(milliseconds: 300));

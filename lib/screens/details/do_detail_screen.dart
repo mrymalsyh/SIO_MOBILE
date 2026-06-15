@@ -15,7 +15,7 @@ class _DoDetailScreenState extends State<DoDetailScreen> {
 
   bool _loading = true;
   Map<String, dynamic> _header = {};
-  List<Map<String, dynamic>> _lots = [];
+  List<Map<String, dynamic>> _serials = [];
 
   @override
   void initState() {
@@ -30,8 +30,8 @@ class _DoDetailScreenState extends State<DoDetailScreen> {
 
     setState(() {
       _header = Map<String, dynamic>.from(res['header'] ?? {});
-      _lots =
-          (res['lots'] as List?)
+      _serials =
+          (res['serials'] as List?)
               ?.map((e) => Map<String, dynamic>.from(e))
               .toList() ??
           [];
@@ -43,8 +43,8 @@ class _DoDetailScreenState extends State<DoDetailScreen> {
     final code = _header['DO_Number']?.toString() ?? '-';
     final supplier = _header['SupplierName']?.toString() ?? '-';
     final date = _header['ReceiveDate']?.toString() ?? '-';
-    final totalLots =
-        _header['TotalLots']?.toString() ?? _lots.length.toString();
+    final totalSerials =
+        _header['TotalSerials']?.toString() ?? _serials.length.toString();
 
     return Card(
       margin: const EdgeInsets.all(12),
@@ -65,7 +65,7 @@ class _DoDetailScreenState extends State<DoDetailScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            _iconText(Icons.list_alt, 'Total Lots: $totalLots'),
+            _iconText(Icons.list_alt, 'Total Serials: $totalSerials'),
           ],
         ),
       ),
@@ -83,20 +83,20 @@ class _DoDetailScreenState extends State<DoDetailScreen> {
     );
   }
 
-  Widget _buildGroupedLots() {
+  Widget _buildGroupedSerials() {
     if (_loading) {
       return const Expanded(child: Center(child: CircularProgressIndicator()));
     }
 
-    if (_lots.isEmpty) {
-      return const Expanded(child: Center(child: Text('No lots for this DO.')));
+    if (_serials.isEmpty) {
+      return const Expanded(child: Center(child: Text('No serials for this DO.')));
     }
 
     // ✅ Group by product + ref
     final Map<String, List<Map<String, dynamic>>> grouped = {};
-    for (var lot in _lots) {
-      final key = '${lot['ProductName'] ?? '-'}|${lot['RefNum'] ?? '-'}';
-      grouped.putIfAbsent(key, () => []).add(lot);
+    for (var serial in _serials) {
+      final key = '${serial['ProductName'] ?? '-'}|${serial['ProductCode'] ?? '-'}';
+      grouped.putIfAbsent(key, () => []).add(serial);
     }
 
     return Expanded(
@@ -108,7 +108,7 @@ class _DoDetailScreenState extends State<DoDetailScreen> {
             final parts = entry.key.split('|');
             final product = parts[0];
             final ref = parts[1] != '-' ? parts[1] : '';
-            final lots = entry.value;
+            final serials = entry.value;
 
             return Card(
               margin: const EdgeInsets.symmetric(vertical: 8),
@@ -124,7 +124,7 @@ class _DoDetailScreenState extends State<DoDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Product name + ref + lot count
+                    // Product name + ref + serial count
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -149,7 +149,7 @@ class _DoDetailScreenState extends State<DoDetailScreen> {
                           ),
                         ),
                         Text(
-                          '${lots.length} lot(s)',
+                          '${serials.length} serial(s)',
                           style: const TextStyle(color: Colors.grey),
                         ),
                       ],
@@ -168,7 +168,7 @@ class _DoDetailScreenState extends State<DoDetailScreen> {
                           Expanded(
                             flex: 3,
                             child: Text(
-                              'Lot Number',
+                              'Serial Number',
                               style: TextStyle(fontWeight: FontWeight.w600),
                             ),
                           ),
@@ -192,10 +192,10 @@ class _DoDetailScreenState extends State<DoDetailScreen> {
                     const Divider(height: 1),
                     // Table Rows
                     Column(
-                      children: lots.map((lot) {
-                        final lotNum = lot['LotNumber'] ?? '-';
-                        final expiry = lot['ExpiryDate'] ?? '-';
-                        final status = lot['Status'] ?? 'Unknown';
+                      children: serials.map((serial) {
+                        final serialNum = serial['SerialNumber'] ?? '-';
+                        final expiry = serial['ExpiryDate'] ?? '-';
+                        final status = serial['Status'] ?? 'Unknown';
 
                         Color color;
                         switch (status.toLowerCase()) {
@@ -219,7 +219,7 @@ class _DoDetailScreenState extends State<DoDetailScreen> {
                           ),
                           child: Row(
                             children: [
-                              Expanded(flex: 3, child: Text(lotNum)),
+                              Expanded(flex: 3, child: Text(serialNum)),
                               Expanded(flex: 2, child: Text(expiry)),
                               Expanded(
                                 flex: 2,
@@ -257,25 +257,25 @@ class _DoDetailScreenState extends State<DoDetailScreen> {
   }
 
   void _onPrint() async {
-    if (_lots.isEmpty) {
+    if (_serials.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('No lots to print.')));
+      ).showSnackBar(const SnackBar(content: Text('No serials to print.')));
       return;
     }
 
     try {
-      // Convert _lots to the expected structure
-      final formattedLots = _lots.map((lot) {
+      // Convert _serials to the expected structure
+      final formattedSerials = _serials.map((serial) {
         return {
-          'medicine_name': lot['ProductName'] ?? '',
-          'reference_number': lot['RefNum'] ?? '',
-          'expiry_date': lot['ExpiryDate'] ?? '',
-          'lot_number': lot['LotNumber'] ?? '',
+          'medicine_name': serial['ProductName'] ?? '',
+          'product_code': serial['ProductCode'] ?? '',
+          'expiry_date': serial['ExpiryDate'] ?? '',
+          'serial_number': serial['SerialNumber'] ?? '',
         };
       }).toList();
 
-      await PrinterService.printAllLots(context, formattedLots);
+      await PrinterService.printAllSerials(context, formattedSerials);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -301,7 +301,7 @@ class _DoDetailScreenState extends State<DoDetailScreen> {
         children: [
           _buildHeader(),
           const Divider(height: 1),
-          _buildGroupedLots(),
+          _buildGroupedSerials(),
         ],
       ),
     );

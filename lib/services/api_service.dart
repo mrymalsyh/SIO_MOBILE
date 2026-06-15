@@ -223,24 +223,24 @@ class ApiService {
     return (stockItem['is_available'] == true) ? 'Available' : 'Unavailable';
   }
 
-  List<Map<String, dynamic>> _toLegacyLots(Map<String, dynamic> stockInData) {
+  List<Map<String, dynamic>> _toLegacySerials(Map<String, dynamic> stockInData) {
     final lines = _mapList(stockInData['lines']);
-    final lots = <Map<String, dynamic>>[];
+    final serials = <Map<String, dynamic>>[];
 
     for (final line in lines) {
       final stockItems = _mapList(line['stock_items']);
       for (final item in stockItems) {
-        lots.add({
+        serials.add({
           'ProductName': line['product_name'] ?? '-',
-          'RefNum': line['product_code'] ?? '',
-          'LotNumber': item['serial_number'] ?? '-',
+          'ProductCode': line['product_code'] ?? '',
+          'SerialNumber': item['serial_number'] ?? '-',
           'ExpiryDate': '',
           'Status': _stockItemStatus(item),
         });
       }
     }
 
-    return lots;
+    return serials;
   }
 
   Future<Response?> login(
@@ -333,23 +333,23 @@ class ApiService {
         .toList();
   }
 
-  Future<Map<String, dynamic>> getDoLots(
+  Future<Map<String, dynamic>> getDoSerials(
     BuildContext context, {
     required String doId,
   }) async {
     if (!await _hasConnection()) {
       _snack(context, 'No internet connection.');
-      return {'header': {}, 'lots': []};
+      return {'header': {}, 'serials': []};
     }
     if (!await _isBackendReachable()) {
       _snack(context, 'Cannot reach server.');
-      return {'header': {}, 'lots': []};
+      return {'header': {}, 'serials': []};
     }
 
     try {
       final stockIn = await _findStockInByNumber(doId);
       if (stockIn == null) {
-        return {'header': {}, 'lots': []};
+        return {'header': {}, 'serials': []};
       }
 
       final detail = await getStockInDetail(
@@ -360,18 +360,18 @@ class ApiService {
       final data = detail?['data'] is Map
           ? Map<String, dynamic>.from(detail!['data'])
           : <String, dynamic>{};
-      final lots = _toLegacyLots(data);
+      final serials = _toLegacySerials(data);
       final header = {
         'DO_Number': data['stock_in_number'] ?? doId,
-        'TotalLots': lots.length,
+        'TotalSerials': serials.length,
         'SupplierName': data['supplier_name'] ?? '-',
         'ReceiveDate': data['stock_in_date']?.toString().split('T').first ?? '',
       };
 
-      return {'header': header, 'lots': lots};
+      return {'header': header, 'serials': serials};
     } on DioException catch (e) {
       _snack(context, _errorMessage(e, 'Failed to load DO details.'));
-      return {'header': {}, 'lots': []};
+      return {'header': {}, 'serials': []};
     }
   }
 
@@ -524,18 +524,18 @@ class ApiService {
     return false;
   }
 
-  Future<Map<String, dynamic>> getStockInDoLots(
+  Future<Map<String, dynamic>> getStockInDoSerials(
     BuildContext context, {
     required String doNumber,
   }) async {
-    final result = await getDoLots(context, doId: doNumber);
-    final lots = (result['lots'] as List?) ?? const [];
+    final result = await getDoSerials(context, doId: doNumber);
+    final serials = (result['serials'] as List?) ?? const [];
     final header = Map<String, dynamic>.from(result['header'] ?? {});
 
     return {
       'DO_Number': header['DO_Number'] ?? doNumber,
-      'TotalLots': header['TotalLots'] ?? lots.length,
-      'Lots': lots,
+      'TotalSerials': header['TotalSerials'] ?? serials.length,
+      'Serials': serials,
     };
   }
 
@@ -600,7 +600,7 @@ class ApiService {
     final query = <String, dynamic>{
       'per_page': 50,
       if (search != null && search.trim().isNotEmpty) 'q': search.trim(),
-      if (supplierId case final supplierId?) 'supplier_id': supplierId,
+      'supplier_id': ?supplierId,
     };
 
     try {
