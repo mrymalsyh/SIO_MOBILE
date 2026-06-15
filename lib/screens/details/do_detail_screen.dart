@@ -268,7 +268,7 @@ class _DoDetailScreenState extends State<DoDetailScreen> {
       // Convert _serials to the expected structure
       final formattedSerials = _serials.map((serial) {
         return {
-          'medicine_name': serial['ProductName'] ?? '',
+          'product_name': serial['ProductName'] ?? '',
           'product_code': serial['ProductCode'] ?? '',
           'expiry_date': serial['ExpiryDate'] ?? '',
           'serial_number': serial['SerialNumber'] ?? '',

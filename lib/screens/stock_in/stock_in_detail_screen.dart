@@ -166,7 +166,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
       for (var item in items) {
         if (item['serial_source'] == 'GENERATED') {
           generatedItems.add({
-            'medicine_name': productName,
+            'product_name': productName,
             'product_code': productCode,
             'expiry_date':
                 '', // SIO_BE doesn't seem to have expiry at item level

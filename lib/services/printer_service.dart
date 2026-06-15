@@ -3,44 +3,50 @@ import '../services/bluetooth_service.dart';
 
 class PrinterService {
   static String buildTSPLLabel({
-    required String medicineName,
+    required String productName,
     required String serialNumber,
   }) {
-    return '''
-SIZE 40 mm,30 mm
-GAP 2 mm,0
-DENSITY 8
-SPEED 4
-DIRECTION 1
-REFERENCE 0,0
-CLS
-TEXT 25,20,"2",0,1,1,"$medicineName"
-BARCODE 35,70,"128",60,0,0,1,1,"$serialNumber"
-TEXT 35,140,"2",0,1,1,"$serialNumber"
-PRINT 1
-''';
+    final buffer = StringBuffer();
+    buffer.writeln('SIZE 40 mm,30 mm');
+    buffer.writeln('GAP 2 mm,0');
+    buffer.writeln('DENSITY 8');
+    buffer.writeln('SPEED 4');
+    buffer.writeln('DIRECTION 1');
+    buffer.writeln('REFERENCE 0,0');
+    buffer.writeln('CLS');
+
+    if (productName.length < 12) {
+      buffer.writeln('TEXT 25,20,"2",0,1,1,"$productName"');
+    } else {
+      int mid = productName.length ~/ 2;
+      int splitIndex = productName.lastIndexOf(' ', mid + 5);
+      if (splitIndex <= 0) {
+        splitIndex = mid;
+      }
+      String line1 = productName.substring(0, splitIndex).trim();
+      String line2 = productName.substring(splitIndex).trim();
+
+      buffer.writeln('TEXT 25,30,"1",0,1,2,"$line1"');
+      buffer.writeln('TEXT 25,65,"1",0,1,2,"$line2"');
+    }
+
+    buffer.writeln('BARCODE 15,100,"128",60,0,0,1,1,"$serialNumber"');
+    buffer.writeln('TEXT 35,170,"1",0,1,1,"$serialNumber"');
+    buffer.writeln('PRINT 1');
+
+    return buffer.toString();
   }
 
   /// Test print
   static Future<void> testPrint(BuildContext context) async {
     try {
-      const med = 'THERMAL PRINTER USB BLUETOOTH AUTOCUT (80MM)';
+      const med = 'THERMAL';
       const serial = 'TP80-USBBT-20260615-0001';
 
-      final cmd =
-          '''
-SIZE 40 mm,30 mm
-GAP 2 mm,0
-DENSITY 8
-SPEED 4
-DIRECTION 1
-REFERENCE 0,0
-CLS
-TEXT 25,20,"2",0,1,1,"$med"
-BARCODE 35,70,"128",60,0,0,1,1,"$serial"
-TEXT 35,140,"2",0,1,1,"$serial"
-PRINT 1
-''';
+      final cmd = buildTSPLLabel(
+        productName: med,
+        serialNumber: serial,
+      );
 
       await BluetoothService.sendCommand(cmd);
 
@@ -66,7 +72,7 @@ PRINT 1
     try {
       for (final serial in serialList) {
         final cmd = buildTSPLLabel(
-          medicineName: serial['medicine_name'] ?? '',
+          productName: serial['product_name'] ?? '',
           serialNumber: serial['serial_number'] ?? '',
         );
         await BluetoothService.sendCommand(cmd);
