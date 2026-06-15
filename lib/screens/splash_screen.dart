@@ -64,7 +64,7 @@ class _SplashScreenState extends State<SplashScreen>
               const SizedBox(height: 32),
 
               const Text(
-                'Medical Supply Consignment',
+                'Stock Inventory Operation',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white,

@@ -39,7 +39,6 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
   static const _gray900 = Color(0xFF111827);
 
   bool _loading = true;
-  bool _isAdmin = false;
   List<Map<String, dynamic>> _rows = [];
   Map<String, dynamic> _header = {};
 
@@ -52,8 +51,6 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
 
   Future<void> _checkRole() async {
     final prefs = await SharedPreferences.getInstance();
-    final role = prefs.getString('user_role') ?? '';
-    setState(() => _isAdmin = role.toLowerCase() == 'admin');
   }
 
   Future<void> _load() async {

@@ -152,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 12),
 
                           const Text(
-                            "Medical Supply System",
+                            "Stock Inventory Operation",
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 20,
