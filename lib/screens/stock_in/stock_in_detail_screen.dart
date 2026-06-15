@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/api_service.dart';
 import '../../services/printer_service.dart';
 
-/// Stock-In Detail Screen matching MSIC_FE web frontend styling
+/// Stock-In Detail Screen matching SIO web frontend styling
 class StockInDetailScreen extends StatefulWidget {
   final int stockInId;
   final String stockInNumber;
@@ -25,7 +25,7 @@ class StockInDetailScreen extends StatefulWidget {
 class _StockInDetailScreenState extends State<StockInDetailScreen> {
   final _api = ApiService();
 
-  // Colors matching MSIC_FE
+  // Colors matching SIO
   static const _indigo50 = Color(0xFFEEF2FF);
   static const _indigo600 = Color(0xFF4F46E5);
   static const _indigo700 = Color(0xFF4338CA);
@@ -59,10 +59,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
   Future<void> _load() async {
     setState(() => _loading = true);
 
-    final response = await _api.getStockInDetail(
-      context,
-      id: widget.stockInId,
-    );
+    final response = await _api.getStockInDetail(context, id: widget.stockInId);
 
     setState(() {
       if (response != null && response['data'] != null) {
@@ -174,7 +171,8 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
           generatedItems.add({
             'medicine_name': productName,
             'reference_number': refNum,
-            'expiry_date': '', // SIO_BE doesn't seem to have expiry at item level
+            'expiry_date':
+                '', // SIO_BE doesn't seem to have expiry at item level
             'lot_number': item['serial_number'] ?? '',
           });
         }
@@ -255,7 +253,10 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
             spacing: 20,
             runSpacing: 12,
             children: [
-              _headerItem(Icons.description_outlined, 'DO: ${widget.stockInNumber}'),
+              _headerItem(
+                Icons.description_outlined,
+                'DO: ${widget.stockInNumber}',
+              ),
               _headerItem(
                 Icons.apartment,
                 _header['SupplierName'] ?? widget.supplierName,

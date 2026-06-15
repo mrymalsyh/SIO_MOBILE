@@ -12,7 +12,6 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
 
-  // Colors matching MSIC_FE
   static const _indigo600 = Color(0xFF4F46E5);
   static const _gray500 = Color(0xFF6B7280);
 

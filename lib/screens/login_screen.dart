@@ -145,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Image.asset(
-                            "assets/logo.png",
+                            "assets/SIO Logo/3.png",
                             height: 70,
                             opacity: const AlwaysStoppedAnimation(0.95),
                           ),
@@ -248,7 +248,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 22),
 
                           Text(
-                            "© 2025 MSIC - Medical Supply Consignment System",
+                            "© 2026 SIO - Stock Invetory Operation System",
                             style: TextStyle(
                               color: Colors.grey[500],
                               fontSize: 12.5,

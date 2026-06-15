@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/api_service.dart';
 
-/// Stock-In Create Screen matching MSIC_FE web frontend styling
+/// Stock-In Create Screen matching SIO web frontend styling
 class StockInCreateScreen extends StatefulWidget {
   const StockInCreateScreen({super.key});
 
@@ -16,7 +16,7 @@ class _StockInCreateScreenState extends State<StockInCreateScreen> {
   final _formKey = GlobalKey<FormState>();
   final _df = DateFormat('yyyy-MM-dd');
 
-  // Colors matching MSIC_FE
+  // Colors matching SIO
   static const _indigo50 = Color(0xFFEEF2FF);
   static const _indigo600 = Color(0xFF4F46E5);
   static const _gray50 = Color(0xFFF9FAFB);

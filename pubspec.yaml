@@ -1,4 +1,4 @@
-name: msic
+name: sio
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -65,8 +65,8 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/logo.png
-    - assets/favicon.png
+    - assets/SIO Logo/4.png
+    - assets/SIO Logo/3.png
   # images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Shared app theme matching MSIC_FE web frontend styling
+/// Shared app theme matching SIO web frontend styling
 class AppTheme {
   AppTheme._();
 
