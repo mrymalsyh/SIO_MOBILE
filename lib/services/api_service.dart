@@ -6,8 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 class ApiService {
-  static const String _prodBaseUrl = 'http://10.0.2.2:8000/api';
-  static const String _devBaseUrl = 'http://10.0.2.2:8000/api';
+  static const String _prodBaseUrl = 'https://sio-be.mysztechnology.com/api';
+  static const String _devBaseUrl = 'https://sio-be.mysztechnology.com/api';
   static const bool _useProd = false;
 
   static String get _baseUrl => _useProd ? _prodBaseUrl : _devBaseUrl;
