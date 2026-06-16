@@ -16,7 +16,7 @@ class PrinterService {
     buffer.writeln('CLS');
 
     if (productName.length < 12) {
-      buffer.writeln('TEXT 25,20,"2",0,1,1,"$productName"');
+      buffer.writeln('TEXT 40,20,"2",0,1,1,"$productName"');
     } else {
       int mid = productName.length ~/ 2;
       int splitIndex = productName.lastIndexOf(' ', mid + 5);
@@ -26,12 +26,12 @@ class PrinterService {
       String line1 = productName.substring(0, splitIndex).trim();
       String line2 = productName.substring(splitIndex).trim();
 
-      buffer.writeln('TEXT 25,30,"1",0,1,2,"$line1"');
-      buffer.writeln('TEXT 25,65,"1",0,1,2,"$line2"');
+      buffer.writeln('TEXT 40,30,"1",0,1,2,"$line1"');
+      buffer.writeln('TEXT 40,65,"1",0,1,2,"$line2"');
     }
 
-    buffer.writeln('BARCODE 15,100,"128",60,0,0,1,1,"$serialNumber"');
-    buffer.writeln('TEXT 35,170,"1",0,1,1,"$serialNumber"');
+    buffer.writeln('BARCODE 30,100,"128",60,0,0,1,1,"$serialNumber"');
+    buffer.writeln('TEXT 50,170,"1",0,1,2,"$serialNumber"');
     buffer.writeln('PRINT 1');
 
     return buffer.toString();
@@ -45,21 +45,21 @@ class PrinterService {
 
       final cmd = buildTSPLLabel(
         productName: med,
-        serialNumber: serial,
+        serialNumber: serial,    
       );
 
       await BluetoothService.sendCommand(cmd);
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('🖨️ Test label printed successfully.')),
+          const SnackBar(content: Text('🖨️ Test label jadiii print.')),
         );
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('❌ Test print failed: $e')));
+        ).showSnackBar(SnackBar(content: Text('❌ Test print tak jadi: $e')));
       }
     }
   }
