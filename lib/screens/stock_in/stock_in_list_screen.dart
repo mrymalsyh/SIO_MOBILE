@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../services/api_service.dart';
+import '../../theme/app_theme.dart';
 import 'widgets/do_card.dart';
 import 'stock_in_detail_screen.dart';
 import 'stock_in_create_screen.dart';
+import '../../main.dart';
 
 /// Stock-In List Screen
 class StockInListScreen extends StatefulWidget {
@@ -17,8 +19,6 @@ class _StockInListScreenState extends State<StockInListScreen> {
   final _api = ApiService();
   final _searchCtrl = TextEditingController();
   final _df = DateFormat('yyyy-MM-dd');
-
-  static const _primaryColor = Color(0xFF4F46E5);
 
   DateTime? _from;
   DateTime? _to;
@@ -84,14 +84,6 @@ class _StockInListScreenState extends State<StockInListScreen> {
       firstDate: DateTime(now.year - 5),
       lastDate: DateTime(now.year + 1),
       initialDate: isFrom ? _from ?? now : _to ?? now,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(primary: _primaryColor),
-          ),
-          child: child!,
-        );
-      },
     );
     if (picked != null) {
       setState(() {
@@ -148,24 +140,37 @@ class _StockInListScreenState extends State<StockInListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColors>()!;
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: colors.bg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: colors.bg,
         elevation: 0,
         scrolledUnderElevation: 1,
-        title: const Text(
+        title: Text(
           'Stock-In',
           style: TextStyle(
-            color: Color(0xFF111827),
+            color: colors.text,
             fontWeight: FontWeight.w600,
             fontSize: 20,
           ),
         ),
         actions: [
           IconButton(
+            onPressed: () {
+              MyApp.of(context).toggleTheme();
+            },
+            icon: Icon(
+              Theme.of(context).brightness == Brightness.dark 
+                  ? Icons.light_mode 
+                  : Icons.dark_mode, 
+              color: colors.text
+            ),
+            tooltip: 'Toggle Theme',
+          ),
+          IconButton(
             onPressed: _load,
-            icon: Icon(Icons.refresh_rounded, color: Colors.grey.shade600),
+            icon: Icon(Icons.refresh_rounded, color: colors.muted),
             tooltip: 'Refresh',
           ),
         ],
@@ -174,19 +179,21 @@ class _StockInListScreenState extends State<StockInListScreen> {
         children: [
           // Filter section
           Container(
-            color: Colors.white,
+            color: colors.surface,
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
                 // Search field
                 TextField(
                   controller: _searchCtrl,
+                  style: TextStyle(color: colors.text),
                   decoration: InputDecoration(
-                    hintText: 'Search DO Number',
-                    prefixIcon: const Icon(Icons.search, size: 20),
+                    hintText: 'Search Stock In Number',
+                    hintStyle: TextStyle(color: colors.muted),
+                    prefixIcon: Icon(Icons.search, size: 20, color: colors.muted),
                     suffixIcon: _searchCtrl.text.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear, size: 18),
+                            icon: Icon(Icons.clear, size: 18, color: colors.muted),
                             onPressed: () {
                               _searchCtrl.clear();
                               _onSearch();
@@ -194,10 +201,14 @@ class _StockInListScreenState extends State<StockInListScreen> {
                           )
                         : null,
                     filled: true,
-                    fillColor: Colors.grey.shade100,
+                    fillColor: colors.panel,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
+                      borderSide: BorderSide(color: colors.line),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: colors.line),
                     ),
                     contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   ),
@@ -208,11 +219,11 @@ class _StockInListScreenState extends State<StockInListScreen> {
                 // Date filters row
                 Row(
                   children: [
-                    Expanded(child: _buildDateChip(_from, 'From', true)),
+                    Expanded(child: _buildDateChip(context, _from, 'From', true)),
                     const SizedBox(width: 8),
-                    Expanded(child: _buildDateChip(_to, 'To', false)),
+                    Expanded(child: _buildDateChip(context, _to, 'To', false)),
                     const SizedBox(width: 8),
-                    _buildClearButton(),
+                    _buildClearButton(context),
                   ],
                 ),
               ],
@@ -222,19 +233,19 @@ class _StockInListScreenState extends State<StockInListScreen> {
           // List
           Expanded(
             child: _loading && _groups.isEmpty
-                ? const Center(
-                    child: CircularProgressIndicator(color: _primaryColor),
+                ? Center(
+                    child: CircularProgressIndicator(color: colors.accent),
                   )
                 : _groups.isEmpty
-                ? _buildEmptyState()
+                ? _buildEmptyState(context)
                 : RefreshIndicator(
-                    color: _primaryColor,
+                    color: colors.accent,
                     onRefresh: _load,
                     child: ListView.builder(
                       padding: const EdgeInsets.only(top: 8, bottom: 100),
                       itemCount: _groups.length + 1,
                       itemBuilder: (context, index) {
-                        if (index == _groups.length) return _buildPagination();
+                        if (index == _groups.length) return _buildPagination(context);
                         final group = _groups[index];
                         return DoCard(
                           doNumber: group['DO_Number']?.toString() ?? '-',
@@ -262,8 +273,8 @@ class _StockInListScreenState extends State<StockInListScreen> {
         height: 48,
         child: FloatingActionButton.extended(
           onPressed: _openCreate,
-          backgroundColor: _primaryColor,
-          foregroundColor: Colors.white,
+          backgroundColor: colors.accent,
+          foregroundColor: colors.accentForeground,
           elevation: 4,
           icon: const Icon(Icons.add, size: 20),
           label: const Text(
@@ -275,7 +286,8 @@ class _StockInListScreenState extends State<StockInListScreen> {
     );
   }
 
-  Widget _buildDateChip(DateTime? date, String label, bool isFrom) {
+  Widget _buildDateChip(BuildContext context, DateTime? date, String label, bool isFrom) {
+    final colors = Theme.of(context).extension<AppColors>()!;
     final hasValue = date != null;
     return InkWell(
       onTap: () => _pickDate(isFrom),
@@ -283,7 +295,8 @@ class _StockInListScreenState extends State<StockInListScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.grey.shade100,
+          color: colors.panel,
+          border: Border.all(color: colors.line),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
@@ -291,7 +304,7 @@ class _StockInListScreenState extends State<StockInListScreen> {
             Icon(
               Icons.calendar_today_outlined,
               size: 16,
-              color: Colors.grey.shade600,
+              color: colors.muted,
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -299,7 +312,7 @@ class _StockInListScreenState extends State<StockInListScreen> {
                 hasValue ? DateFormat('dd MMM').format(date) : label,
                 style: TextStyle(
                   fontSize: 13,
-                  color: hasValue ? Colors.grey.shade800 : Colors.grey.shade500,
+                  color: hasValue ? colors.text : colors.muted,
                 ),
               ),
             ),
@@ -309,50 +322,54 @@ class _StockInListScreenState extends State<StockInListScreen> {
     );
   }
 
-  Widget _buildClearButton() {
+  Widget _buildClearButton(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColors>()!;
     return InkWell(
       onTap: _clearFilters,
       borderRadius: BorderRadius.circular(10),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.grey.shade100,
+          color: colors.panel,
+          border: Border.all(color: colors.line),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(
           Icons.filter_alt_off_outlined,
           size: 20,
-          color: Colors.grey.shade600,
+          color: colors.muted,
         ),
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColors>()!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.inbox_outlined, size: 48, color: Colors.grey.shade400),
+          Icon(Icons.inbox_outlined, size: 48, color: colors.muted),
           const SizedBox(height: 12),
           Text(
             'No stock-ins found.',
-            style: TextStyle(color: Colors.grey.shade600),
+            style: TextStyle(color: colors.muted),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPagination() {
+  Widget _buildPagination(BuildContext context) {
     if (_lastPage <= 1) return const SizedBox.shrink();
+    final colors = Theme.of(context).extension<AppColors>()!;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _paginationButton(Icons.chevron_left, _page > 1, () {
+          _paginationButton(context, Icons.chevron_left, _page > 1, () {
             _page--;
             _load();
           }),
@@ -360,7 +377,8 @@ class _StockInListScreenState extends State<StockInListScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: colors.surface,
+              border: Border.all(color: colors.line),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -368,12 +386,12 @@ class _StockInListScreenState extends State<StockInListScreen> {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: Colors.grey.shade700,
+                color: colors.text,
               ),
             ),
           ),
           const SizedBox(width: 16),
-          _paginationButton(Icons.chevron_right, _page < _lastPage, () {
+          _paginationButton(context, Icons.chevron_right, _page < _lastPage, () {
             _page++;
             _load();
           }),
@@ -382,20 +400,22 @@ class _StockInListScreenState extends State<StockInListScreen> {
     );
   }
 
-  Widget _paginationButton(IconData icon, bool enabled, VoidCallback onTap) {
+  Widget _paginationButton(BuildContext context, IconData icon, bool enabled, VoidCallback onTap) {
+    final colors = Theme.of(context).extension<AppColors>()!;
     return InkWell(
       onTap: enabled ? onTap : null,
       borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: enabled ? Colors.white : Colors.grey.shade200,
+          color: enabled ? colors.surface : colors.panelSoft,
+          border: Border.all(color: colors.line),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(
           icon,
           size: 20,
-          color: enabled ? Colors.grey.shade700 : Colors.grey.shade400,
+          color: enabled ? colors.text : colors.muted,
         ),
       ),
     );

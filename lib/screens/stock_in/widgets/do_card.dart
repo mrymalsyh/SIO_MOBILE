@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../theme/app_theme.dart';
 
 /// Simple, clean DO Card for Stock-In
 class DoCard extends StatelessWidget {
@@ -21,10 +22,15 @@ class DoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColors>()!;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: colors.line),
+      ),
+      color: colors.panel,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
@@ -40,17 +46,17 @@ class DoCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       doNumber,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1F2937),
+                        color: colors.text,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   Text(
                     receiveDate,
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    style: TextStyle(fontSize: 12, color: colors.muted),
                   ),
                 ],
               ),
@@ -59,14 +65,14 @@ class DoCard extends StatelessWidget {
               // Supplier
               Row(
                 children: [
-                  Icon(Icons.business, size: 16, color: Colors.grey.shade500),
+                  Icon(Icons.business, size: 16, color: colors.muted),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       supplierName,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey.shade700,
+                        color: colors.text,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -79,14 +85,15 @@ class DoCard extends StatelessWidget {
               Row(
                 children: [
                   _buildStat(
+                    context,
                     Icons.inventory_2_outlined,
                     'Products',
                     '$totalProducts',
                   ),
                   const SizedBox(width: 24),
-                  _buildStat(Icons.widgets_outlined, 'Units', '$totalQuantity'),
+                  _buildStat(context, Icons.widgets_outlined, 'Units', '$totalQuantity'),
                   const Spacer(),
-                  Icon(Icons.chevron_right, color: Colors.grey.shade400),
+                  Icon(Icons.chevron_right, color: colors.muted),
                 ],
               ),
             ],
@@ -96,15 +103,16 @@ class DoCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStat(IconData icon, String label, String value) {
+  Widget _buildStat(BuildContext context, IconData icon, String label, String value) {
+    final colors = Theme.of(context).extension<AppColors>()!;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: const Color(0xFF4F46E5)),
+        Icon(icon, size: 16, color: colors.accent),
         const SizedBox(width: 4),
         Text(
           '$value $label',
-          style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+          style: TextStyle(fontSize: 13, color: colors.muted),
         ),
       ],
     );

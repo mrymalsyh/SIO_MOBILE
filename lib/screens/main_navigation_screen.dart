@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'stock_in/stock_in_list_screen.dart';
 import 'settings/settings_screen.dart';
+import '../theme/app_theme.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -35,6 +36,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColors>()!;
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: BottomNavigationBar(
@@ -42,9 +44,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         onTap: (index) => setState(() => _currentIndex = index),
         items: _navItems,
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: _indigo600,
-        unselectedItemColor: _gray500,
-        backgroundColor: Colors.white,
+        selectedItemColor: colors.accent,
+        unselectedItemColor: colors.muted,
+        backgroundColor: colors.panel,
+        selectedFontSize: 12.0,
+        unselectedFontSize: 12.0,
         elevation: 8,
       ),
     );

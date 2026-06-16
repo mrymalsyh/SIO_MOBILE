@@ -8,74 +8,38 @@ void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  static MyAppState of(BuildContext context) {
+    return context.findAncestorStateOfType<MyAppState>()!;
+  }
+
+  @override
+  State<MyApp> createState() => MyAppState();
+}
+
+class MyAppState extends State<MyApp> {
+  ThemeMode _themeMode = ThemeMode.system;
+
+  void toggleTheme() {
+    setState(() {
+      if (_themeMode == ThemeMode.system) {
+        final isDark = MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+        _themeMode = isDark ? ThemeMode.light : ThemeMode.dark;
+      } else {
+        _themeMode = _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'SIO Mobile',
-      theme: ThemeData(
-        primaryColor: AppTheme.indigo600,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppTheme.indigo600,
-          brightness: Brightness.light,
-          primary: AppTheme.indigo600,
-          onPrimary: Colors.white,
-          surface: Colors.white,
-          onSurface: AppTheme.gray900,
-          error: AppTheme.red500,
-        ),
-        scaffoldBackgroundColor: AppTheme.gray50,
-        appBarTheme: AppTheme.appBarTheme,
-        cardTheme: CardThemeData(
-          elevation: 1,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-          ),
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: AppTheme.spacingMd,
-            vertical: 14,
-          ),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: AppTheme.primaryButton,
-        ),
-        floatingActionButtonTheme: FloatingActionButtonThemeData(
-          backgroundColor: AppTheme.indigo600,
-          foregroundColor: Colors.white,
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-          ),
-        ),
-        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          backgroundColor: Colors.white,
-          selectedItemColor: AppTheme.indigo600,
-          unselectedItemColor: AppTheme.gray500,
-          type: BottomNavigationBarType.fixed,
-          elevation: 8,
-        ),
-        dividerTheme: const DividerThemeData(
-          color: AppTheme.gray200,
-          thickness: 1,
-        ),
-        snackBarTheme: SnackBarThemeData(
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-          ),
-        ),
-        fontFamily: 'Roboto',
-        useMaterial3: true,
-      ),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: _themeMode,
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       routes: {

@@ -40,7 +40,7 @@ class PrinterService {
   /// Test print
   static Future<void> testPrint(BuildContext context) async {
     try {
-      const med = 'THERMAL';
+      const med = 'MARYAM';
       const serial = 'TP80-USBBT-20260615-0001';
 
       final cmd = buildTSPLLabel(
@@ -52,14 +52,14 @@ class PrinterService {
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('🖨️ Test label jadiii print.')),
+          const SnackBar(content: Text('🖨️ Test label printed successfully.')),
         );
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('❌ Test print tak jadi: $e')));
+        ).showSnackBar(SnackBar(content: Text('❌ Test print unsuccessful: $e')));
       }
     }
   }

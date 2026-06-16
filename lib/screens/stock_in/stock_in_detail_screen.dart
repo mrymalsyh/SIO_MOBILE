@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/api_service.dart';
 import '../../services/printer_service.dart';
+import '../../theme/app_theme.dart';
 
 /// Stock-In Detail Screen matching SIO web frontend styling
 class StockInDetailScreen extends StatefulWidget {
@@ -24,19 +25,6 @@ class StockInDetailScreen extends StatefulWidget {
 
 class _StockInDetailScreenState extends State<StockInDetailScreen> {
   final _api = ApiService();
-
-  // Colors matching SIO
-  static const _indigo50 = Color(0xFFEEF2FF);
-  static const _indigo600 = Color(0xFF4F46E5);
-  static const _indigo700 = Color(0xFF4338CA);
-  static const _slate50 = Color(0xFFF8FAFC);
-  static const _gray50 = Color(0xFFF9FAFB);
-  static const _gray100 = Color(0xFFF3F4F6);
-  static const _gray200 = Color(0xFFE5E7EB);
-  static const _gray400 = Color(0xFF9CA3AF);
-  static const _gray500 = Color(0xFF6B7280);
-  static const _gray700 = Color(0xFF374151);
-  static const _gray900 = Color(0xFF111827);
 
   bool _loading = true;
   List<Map<String, dynamic>> _rows = [];
@@ -117,44 +105,6 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
     return count > 0 ? count : _totalQty;
   }
 
-  Color _statusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'available':
-        return const Color(0xFF22C55E); // green-500
-      case 'supplied':
-        return const Color(0xFF3B82F6); // blue-500
-      case 'returned':
-        return const Color(0xFFF59E0B); // amber-500
-      case 'disposed':
-        return const Color(0xFFEF4444); // red-500
-      case 'pending supply':
-        return _indigo600;
-      case 'expired':
-        return const Color(0xFFF97316); // orange-500
-      default:
-        return _gray500;
-    }
-  }
-
-  Color _statusBgColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'available':
-        return const Color(0xFFDCFCE7); // green-100
-      case 'supplied':
-        return const Color(0xFFDBEAFE); // blue-100
-      case 'returned':
-        return const Color(0xFFFEF3C7); // amber-100
-      case 'disposed':
-        return const Color(0xFFFEE2E2); // red-100
-      case 'pending supply':
-        return _indigo50;
-      case 'expired':
-        return const Color(0xFFFFEDD5); // orange-100
-      default:
-        return _gray100;
-    }
-  }
-
   Future<void> _onPrint() async {
     final generatedItems = <Map<String, dynamic>>[];
 
@@ -200,20 +150,21 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColors>()!;
     return Scaffold(
-      backgroundColor: _gray50,
+      backgroundColor: colors.bg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: colors.bg,
         elevation: 0,
         scrolledUnderElevation: 1,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: _gray700),
+          icon: Icon(Icons.arrow_back, color: colors.text),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           widget.stockInNumber,
-          style: const TextStyle(
-            color: _gray900,
+          style: TextStyle(
+            color: colors.text,
             fontWeight: FontWeight.w600,
             fontSize: 18,
           ),
@@ -222,25 +173,26 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
           IconButton(
             onPressed: _onPrint,
             icon: const Icon(Icons.print_outlined),
-            color: _indigo600,
+            color: colors.accent,
             tooltip: 'Print Labels',
           ),
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: _indigo600))
+          ? Center(child: CircularProgressIndicator(color: colors.accent))
           : Column(
               children: [
-                _buildHeader(),
-                Expanded(child: _buildSerialsList()),
+                _buildHeader(context),
+                Expanded(child: _buildSerialsList(context)),
               ],
             ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColors>()!;
     return Container(
-      color: Colors.white,
+      color: colors.surface,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,18 +203,22 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
             runSpacing: 12,
             children: [
               _headerItem(
+                context,
                 Icons.description_outlined,
                 'DO: ${widget.stockInNumber}',
               ),
               _headerItem(
+                context,
                 Icons.apartment,
                 _header['SupplierName'] ?? widget.supplierName,
               ),
               _headerItem(
+                context,
                 Icons.calendar_today_outlined,
                 _header['ReceiveDate'] ?? widget.receiveDate,
               ),
               _headerItem(
+                context,
                 Icons.person_outline,
                 'PIC: ${_header['PIC'] ?? '-'}',
               ),
@@ -277,8 +233,8 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
                 icon: Icons.inventory_2_outlined,
                 label: 'Total Qty',
                 value: _totalQty.toString(),
-                color: _indigo600,
-                bgColor: _indigo50,
+                color: colors.accent,
+                bgColor: colors.accent.withValues(alpha: 0.1),
               ),
               const SizedBox(width: 12),
               _buildStatChip(
@@ -286,7 +242,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
                 label: 'Serials',
                 value: _totalSerials.toString(),
                 color: const Color(0xFF22C55E),
-                bgColor: const Color(0xFFDCFCE7),
+                bgColor: const Color(0xFFDCFCE7).withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.15 : 1),
               ),
             ],
           ),
@@ -295,13 +251,14 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
     );
   }
 
-  Widget _headerItem(IconData icon, String text) {
+  Widget _headerItem(BuildContext context, IconData icon, String text) {
+    final colors = Theme.of(context).extension<AppColors>()!;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: _gray500),
+        Icon(icon, size: 16, color: colors.muted),
         const SizedBox(width: 6),
-        Text(text, style: const TextStyle(fontSize: 13, color: _gray700)),
+        Text(text, style: TextStyle(fontSize: 13, color: colors.text)),
       ],
     );
   }
@@ -338,17 +295,18 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
     );
   }
 
-  Widget _buildSerialsList() {
+  Widget _buildSerialsList(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColors>()!;
     if (_rows.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.inbox_outlined, size: 48, color: _gray400),
+            Icon(Icons.inbox_outlined, size: 48, color: colors.muted),
             const SizedBox(height: 12),
             Text(
               'No items found for this DO.',
-              style: TextStyle(color: _gray500),
+              style: TextStyle(color: colors.muted),
             ),
           ],
         ),
@@ -356,20 +314,23 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
     }
 
     return RefreshIndicator(
-      color: _indigo600,
+      color: colors.accent,
       onRefresh: _load,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: _grouped.length,
         itemBuilder: (context, index) {
           final group = _grouped[index];
-          return _buildProductCard(group);
+          return _buildProductCard(context, group);
         },
       ),
     );
   }
 
-  Widget _buildProductCard(Map<String, dynamic> group) {
+  Widget _buildProductCard(BuildContext context, Map<String, dynamic> group) {
+    final colors = Theme.of(context).extension<AppColors>()!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final productName = group['ProductName'] ?? '-';
     final productCode = group['ProductCode'];
     final serials = group['Serials'] as List<Map<String, dynamic>>? ?? [];
@@ -383,9 +344,9 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _gray200),
+        border: Border.all(color: colors.line),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -401,7 +362,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: _gray100,
+              color: colors.panel,
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(16),
               ),
@@ -415,16 +376,16 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
                     children: [
                       Text(
                         productName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
-                          color: _gray900,
+                          color: colors.text,
                         ),
                       ),
                       if (productCode != null)
                         Text(
                           'Code: $productCode',
-                          style: TextStyle(fontSize: 12, color: _gray500),
+                          style: TextStyle(fontSize: 12, color: colors.muted),
                         ),
                     ],
                   ),
@@ -435,7 +396,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: _indigo50,
+                    color: colors.accent.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -443,7 +404,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
-                      color: _indigo700,
+                      color: colors.accent,
                     ),
                   ),
                 ),
@@ -458,28 +419,28 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
               children: [
                 Expanded(
                   flex: 3,
-                  child: Text('Serial Number', style: _tableHeaderStyle),
+                  child: Text('Serial Number', style: _tableHeaderStyle(context)),
                 ),
                 Expanded(
                   flex: 2,
-                  child: Text('Batch', style: _tableHeaderStyle),
+                  child: Text('Batch', style: _tableHeaderStyle(context)),
                 ),
                 Expanded(
                   flex: 2,
-                  child: Text('Expiry', style: _tableHeaderStyle),
+                  child: Text('Expiry', style: _tableHeaderStyle(context)),
                 ),
                 Expanded(
                   flex: 2,
                   child: Text(
                     'Status',
-                    style: _tableHeaderStyle,
+                    style: _tableHeaderStyle(context),
                     textAlign: TextAlign.center,
                   ),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1, color: _gray200),
+          Divider(height: 1, color: colors.line),
 
           // Serials rows
           if (serials.isNotEmpty)
@@ -488,7 +449,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
               final serial = entry.value;
               final status = serial['current_status'] ?? 'Unknown';
               return Container(
-                color: i.isEven ? Colors.white : _slate50,
+                color: i.isEven ? colors.surface : colors.panelSoft,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 10,
@@ -499,10 +460,10 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
                       flex: 3,
                       child: Text(
                         serial['serial_number'] ?? '-',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
-                          color: _gray900,
+                          color: colors.text,
                         ),
                       ),
                     ),
@@ -510,14 +471,14 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
                       flex: 2,
                       child: Text(
                         batchDisplay,
-                        style: const TextStyle(fontSize: 13, color: _gray700),
+                        style: TextStyle(fontSize: 13, color: colors.text),
                       ),
                     ),
                     Expanded(
                       flex: 2,
                       child: Text(
                         '-',
-                        style: const TextStyle(fontSize: 13, color: _gray700),
+                        style: TextStyle(fontSize: 13, color: colors.text),
                       ),
                     ),
                     Expanded(
@@ -529,7 +490,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: _statusBgColor(status),
+                            color: AppTheme.statusBgColor(status, isDark),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -537,7 +498,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
-                              color: _statusColor(status),
+                              color: AppTheme.statusColor(status),
                             ),
                           ),
                         ),
@@ -552,7 +513,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
               padding: const EdgeInsets.all(16),
               child: Text(
                 'Batch: $batchDisplay • Qty: ${items.fold<int>(0, (s, i) => s + (int.tryParse('${i['received_qty'] ?? 0}') ?? 0))}',
-                style: TextStyle(color: _gray500),
+                style: TextStyle(color: colors.muted),
               ),
             ),
         ],
@@ -560,10 +521,13 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
     );
   }
 
-  TextStyle get _tableHeaderStyle => TextStyle(
-    fontSize: 11,
-    fontWeight: FontWeight.w600,
-    color: _gray500,
-    letterSpacing: 0.3,
-  );
+  TextStyle _tableHeaderStyle(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColors>()!;
+    return TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.w600,
+      color: colors.muted,
+      letterSpacing: 0.3,
+    );
+  }
 }

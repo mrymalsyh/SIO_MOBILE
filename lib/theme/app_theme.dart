@@ -1,31 +1,77 @@
 import 'package:flutter/material.dart';
 
+class AppColors extends ThemeExtension<AppColors> {
+  final Color bg;
+  final Color panel;
+  final Color panelSoft;
+  final Color text;
+  final Color muted;
+  final Color line;
+  final Color accent;
+  final Color accentForeground;
+  final Color surface;
+
+  const AppColors({
+    required this.bg,
+    required this.panel,
+    required this.panelSoft,
+    required this.text,
+    required this.muted,
+    required this.line,
+    required this.accent,
+    required this.accentForeground,
+    required this.surface,
+  });
+
+  @override
+  ThemeExtension<AppColors> copyWith({
+    Color? bg,
+    Color? panel,
+    Color? panelSoft,
+    Color? text,
+    Color? muted,
+    Color? line,
+    Color? accent,
+    Color? accentForeground,
+    Color? surface,
+  }) {
+    return AppColors(
+      bg: bg ?? this.bg,
+      panel: panel ?? this.panel,
+      panelSoft: panelSoft ?? this.panelSoft,
+      text: text ?? this.text,
+      muted: muted ?? this.muted,
+      line: line ?? this.line,
+      accent: accent ?? this.accent,
+      accentForeground: accentForeground ?? this.accentForeground,
+      surface: surface ?? this.surface,
+    );
+  }
+
+  @override
+  ThemeExtension<AppColors> lerp(covariant ThemeExtension<AppColors>? other, double t) {
+    if (other is! AppColors) {
+      return this;
+    }
+    return AppColors(
+      bg: Color.lerp(bg, other.bg, t)!,
+      panel: Color.lerp(panel, other.panel, t)!,
+      panelSoft: Color.lerp(panelSoft, other.panelSoft, t)!,
+      text: Color.lerp(text, other.text, t)!,
+      muted: Color.lerp(muted, other.muted, t)!,
+      line: Color.lerp(line, other.line, t)!,
+      accent: Color.lerp(accent, other.accent, t)!,
+      accentForeground: Color.lerp(accentForeground, other.accentForeground, t)!,
+      surface: Color.lerp(surface, other.surface, t)!,
+    );
+  }
+}
+
 /// Shared app theme matching SIO web frontend styling
 class AppTheme {
   AppTheme._();
 
-  // ========== COLORS ==========
-
-  // Primary - Indigo
-  static const indigo50 = Color(0xFFEEF2FF);
-  static const indigo100 = Color(0xFFE0E7FF);
-  static const indigo600 = Color.fromARGB(255, 4, 1, 55);
-  static const indigo700 = Color.fromARGB(255, 5, 0, 66);
-
-  // Gray scale
-  static const gray50 = Color(0xFFF9FAFB);
-  static const gray100 = Color(0xFFF3F4F6);
-  static const gray200 = Color(0xFFE5E7EB);
-  static const gray300 = Color(0xFFD1D5DB);
-  static const gray400 = Color(0xFF9CA3AF);
-  static const gray500 = Color(0xFF6B7280);
-  static const gray700 = Color(0xFF374151);
-  static const gray900 = Color(0xFF111827);
-
-  // Slate
-  static const slate50 = Color(0xFFF8FAFC);
-
-  // Status colors
+  // Status colors (kept from original)
   static const green100 = Color(0xFFDCFCE7);
   static const green500 = Color(0xFF22C55E);
   static const blue100 = Color(0xFFDBEAFE);
@@ -37,7 +83,7 @@ class AppTheme {
   static const red100 = Color(0xFFFEE2E2);
   static const red500 = Color(0xFFEF4444);
 
-  // ========== SPACING ==========
+  // Spacing
   static const double spacingXs = 4;
   static const double spacingSm = 8;
   static const double spacingMd = 12;
@@ -45,7 +91,7 @@ class AppTheme {
   static const double spacingXl = 20;
   static const double spacing2xl = 24;
 
-  // ========== BORDER RADIUS ==========
+  // Border Radius
   static const double radiusSm = 8;
   static const double radiusMd = 12;
   static const double radiusLg = 16;
@@ -56,169 +102,280 @@ class AppTheme {
   static const TextStyle headingLg = TextStyle(
     fontSize: 20,
     fontWeight: FontWeight.w600,
-    color: gray900,
   );
 
   static const TextStyle headingMd = TextStyle(
     fontSize: 18,
     fontWeight: FontWeight.w600,
-    color: gray900,
   );
 
   static const TextStyle headingSm = TextStyle(
     fontSize: 15,
     fontWeight: FontWeight.w600,
-    color: gray900,
   );
 
   static const TextStyle bodyLg = TextStyle(
     fontSize: 15,
     fontWeight: FontWeight.w500,
-    color: gray900,
   );
 
   static const TextStyle bodyMd = TextStyle(
     fontSize: 14,
     fontWeight: FontWeight.normal,
-    color: gray700,
   );
 
   static const TextStyle bodySm = TextStyle(
     fontSize: 13,
     fontWeight: FontWeight.normal,
-    color: gray700,
   );
 
   static const TextStyle caption = TextStyle(
     fontSize: 12,
     fontWeight: FontWeight.normal,
-    color: gray500,
   );
 
   static const TextStyle label = TextStyle(
     fontSize: 11,
     fontWeight: FontWeight.w500,
     letterSpacing: 0.5,
-    color: gray400,
   );
 
   static const TextStyle labelUppercase = TextStyle(
     fontSize: 10,
     fontWeight: FontWeight.w500,
     letterSpacing: 0.5,
-    color: gray400,
   );
 
-  // ========== DECORATIONS ==========
-  static BoxDecoration get cardDecoration => BoxDecoration(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(radiusLg),
-    border: Border.all(color: gray200),
-    boxShadow: [
-      BoxShadow(
-        color: Colors.black.withValues(alpha: 0.05),
-        blurRadius: 4,
-        offset: const Offset(0, 2),
+  static const AppColors lightColors = AppColors(
+    bg: Color(0xFFFFFFFF),
+    panel: Color(0xFFF4F4F5),
+    panelSoft: Color(0xFFF4F4F5),
+    text: Color(0xFF09090B),
+    muted: Color(0xFF71717A),
+    line: Color(0xFFE4E4E7),
+    accent: Color(0xFF18181B),
+    accentForeground: Color(0xFFFAFAFA),
+    surface: Color(0xFFFFFFFF),
+  );
+
+  static const AppColors darkColors = AppColors(
+    bg: Color(0xFF09090B),
+    panel: Color(0xFF18181B),
+    panelSoft: Color(0xFF18181B),
+    text: Color(0xFFFAFAFA),
+    muted: Color(0xFFA1A1AA),
+    line: Color(0xFF27272A),
+    accent: Color(0xFFFAFAFA),
+    accentForeground: Color(0xFF09090B),
+    surface: Color(0xFF18181B),
+  );
+
+  static ThemeData get lightTheme {
+    return ThemeData(
+      brightness: Brightness.light,
+      primaryColor: lightColors.accent,
+      scaffoldBackgroundColor: lightColors.bg,
+      colorScheme: ColorScheme.light(
+        primary: lightColors.accent,
+        onPrimary: lightColors.accentForeground,
+        surface: lightColors.surface,
+        onSurface: lightColors.text,
+        error: red500,
       ),
-    ],
-  );
+      appBarTheme: AppBarTheme(
+        backgroundColor: lightColors.bg,
+        elevation: 0,
+        scrolledUnderElevation: 1,
+        centerTitle: true,
+        titleTextStyle: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: lightColors.text,
+        ),
+        iconTheme: IconThemeData(color: lightColors.text),
+      ),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        color: lightColors.panel,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radiusLg),
+          side: BorderSide(color: lightColors.line),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(radiusMd),
+          borderSide: BorderSide(color: lightColors.line),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(radiusMd),
+          borderSide: BorderSide(color: lightColors.line),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(radiusMd),
+          borderSide: BorderSide(color: lightColors.accent, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(radiusMd),
+          borderSide: const BorderSide(color: red500),
+        ),
+        filled: true,
+        fillColor: lightColors.surface,
+        hintStyle: TextStyle(color: lightColors.muted, fontSize: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: spacingMd,
+          vertical: 14,
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: lightColors.accent,
+          foregroundColor: lightColors.accentForeground,
+          padding: const EdgeInsets.symmetric(horizontal: spacingLg, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(radiusMd),
+          ),
+          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: lightColors.accent,
+        foregroundColor: lightColors.accentForeground,
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radiusMd),
+        ),
+      ),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: lightColors.bg,
+        selectedItemColor: lightColors.accent,
+        unselectedItemColor: lightColors.muted,
+        type: BottomNavigationBarType.fixed,
+        elevation: 8,
+      ),
+      dividerTheme: DividerThemeData(
+        color: lightColors.line,
+        thickness: 1,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radiusSm),
+        ),
+        backgroundColor: lightColors.accent,
+        contentTextStyle: TextStyle(color: lightColors.accentForeground),
+      ),
+      fontFamily: 'Roboto',
+      useMaterial3: true,
+      extensions: [lightColors],
+    );
+  }
 
-  static BoxDecoration get inputDecoration => BoxDecoration(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(radiusMd),
-    border: Border.all(color: gray300),
-  );
-
-  static BoxDecoration get chipDecoration => BoxDecoration(
-    color: indigo50,
-    borderRadius: BorderRadius.circular(radiusMd),
-  );
-
-  static Decoration get gradientAccent => BoxDecoration(
-    borderRadius: const BorderRadius.vertical(top: Radius.circular(radiusLg)),
-    gradient: LinearGradient(colors: [indigo600, Colors.purple.shade500]),
-  );
-
-  // ========== INPUT DECORATION ==========
-  static InputDecoration textFieldDecoration({
-    required String hint,
-    IconData? prefixIcon,
-  }) => InputDecoration(
-    hintText: hint,
-    hintStyle: TextStyle(color: gray400, fontSize: 14),
-    prefixIcon: prefixIcon != null
-        ? Icon(prefixIcon, color: gray500, size: 20)
-        : null,
-    filled: true,
-    fillColor: Colors.white,
-    contentPadding: const EdgeInsets.symmetric(
-      horizontal: spacingMd,
-      vertical: 14,
-    ),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(radiusMd),
-      borderSide: BorderSide(color: gray300),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(radiusMd),
-      borderSide: BorderSide(color: gray300),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(radiusMd),
-      borderSide: BorderSide(color: indigo600, width: 1.5),
-    ),
-    errorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(radiusMd),
-      borderSide: BorderSide(color: red500),
-    ),
-  );
-
-  // ========== BUTTON STYLES ==========
-  static ButtonStyle get primaryButton => ElevatedButton.styleFrom(
-    backgroundColor: const Color.fromARGB(255, 6, 6, 24),
-    foregroundColor: Colors.white,
-    padding: const EdgeInsets.symmetric(horizontal: spacingLg, vertical: 14),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(radiusMd),
-    ),
-    textStyle: const TextStyle(fontWeight: FontWeight.w600),
-  );
-
-  static ButtonStyle get successButton => ElevatedButton.styleFrom(
-    backgroundColor: green500,
-    foregroundColor: Colors.white,
-    padding: const EdgeInsets.symmetric(horizontal: spacingLg, vertical: 14),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(radiusMd),
-    ),
-    textStyle: const TextStyle(fontWeight: FontWeight.w600),
-  );
-
-  static ButtonStyle get dangerButton => ElevatedButton.styleFrom(
-    backgroundColor: red500,
-    foregroundColor: Colors.white,
-    padding: const EdgeInsets.symmetric(horizontal: spacingLg, vertical: 14),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(radiusMd),
-    ),
-    textStyle: const TextStyle(fontWeight: FontWeight.w600),
-  );
-
-  // ========== APP BAR ==========
-  static AppBarTheme get appBarTheme => const AppBarTheme(
-    backgroundColor: Colors.white,
-    elevation: 0,
-    scrolledUnderElevation: 1,
-    centerTitle: true,
-    titleTextStyle: headingMd,
-    iconTheme: IconThemeData(color: gray700),
-  );
+  static ThemeData get darkTheme {
+    return ThemeData(
+      brightness: Brightness.dark,
+      primaryColor: darkColors.accent,
+      scaffoldBackgroundColor: darkColors.bg,
+      colorScheme: ColorScheme.dark(
+        primary: darkColors.accent,
+        onPrimary: darkColors.accentForeground,
+        surface: darkColors.surface,
+        onSurface: darkColors.text,
+        error: red500,
+      ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: darkColors.bg,
+        elevation: 0,
+        scrolledUnderElevation: 1,
+        centerTitle: true,
+        titleTextStyle: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: darkColors.text,
+        ),
+        iconTheme: IconThemeData(color: darkColors.text),
+      ),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        color: darkColors.panel,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radiusLg),
+          side: BorderSide(color: darkColors.line),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(radiusMd),
+          borderSide: BorderSide(color: darkColors.line),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(radiusMd),
+          borderSide: BorderSide(color: darkColors.line),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(radiusMd),
+          borderSide: BorderSide(color: darkColors.accent, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(radiusMd),
+          borderSide: const BorderSide(color: red500),
+        ),
+        filled: true,
+        fillColor: darkColors.surface,
+        hintStyle: TextStyle(color: darkColors.muted, fontSize: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: spacingMd,
+          vertical: 14,
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: darkColors.accent,
+          foregroundColor: darkColors.accentForeground,
+          padding: const EdgeInsets.symmetric(horizontal: spacingLg, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(radiusMd),
+          ),
+          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: darkColors.accent,
+        foregroundColor: darkColors.accentForeground,
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radiusMd),
+        ),
+      ),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: darkColors.bg,
+        selectedItemColor: darkColors.accent,
+        unselectedItemColor: darkColors.muted,
+        type: BottomNavigationBarType.fixed,
+        elevation: 8,
+      ),
+      dividerTheme: DividerThemeData(
+        color: darkColors.line,
+        thickness: 1,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radiusSm),
+        ),
+        backgroundColor: darkColors.accent,
+        contentTextStyle: TextStyle(color: darkColors.accentForeground),
+      ),
+      fontFamily: 'Roboto',
+      useMaterial3: true,
+      extensions: [darkColors],
+    );
+  }
 
   // ========== STATUS HELPERS ==========
   static Color statusColor(String status) {
     switch (status.toLowerCase()) {
       case 'available':
-        return green500;
       case 'supplied':
         return green500;
       case 'completed':
@@ -230,34 +387,56 @@ class AppTheme {
       case 'expired':
         return orange500;
       case 'pending supply':
-        return indigo600;
+        return const Color(0xFF3B82F6); // Changed from indigo to blue
       case 'draft':
-        return gray500;
+        return const Color(0xFF6B7280); // Gray
       default:
-        return gray500;
+        return const Color(0xFF6B7280);
     }
   }
 
-  static Color statusBgColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'available':
-        return green100;
-      case 'supplied':
-        return green100;
-      case 'completed':
-        return blue100;
-      case 'returned':
-        return amber100;
-      case 'disposed':
-        return red100;
-      case 'expired':
-        return orange100;
-      case 'pending supply':
-        return indigo50;
-      case 'draft':
-        return gray100;
-      default:
-        return gray100;
+  static Color statusBgColor(String status, bool isDark) {
+    // Return dark mode friendly background variants
+    if (isDark) {
+      switch (status.toLowerCase()) {
+        case 'available':
+        case 'supplied':
+          return const Color.fromRGBO(34, 197, 94, 0.15);
+        case 'completed':
+          return const Color.fromRGBO(59, 130, 246, 0.15);
+        case 'returned':
+          return const Color.fromRGBO(245, 158, 11, 0.15);
+        case 'disposed':
+          return const Color.fromRGBO(239, 68, 68, 0.15);
+        case 'expired':
+          return const Color.fromRGBO(249, 115, 22, 0.15);
+        case 'pending supply':
+          return const Color.fromRGBO(59, 130, 246, 0.15);
+        case 'draft':
+          return const Color.fromRGBO(107, 114, 128, 0.15);
+        default:
+          return const Color.fromRGBO(107, 114, 128, 0.15);
+      }
+    } else {
+      switch (status.toLowerCase()) {
+        case 'available':
+        case 'supplied':
+          return green100;
+        case 'completed':
+          return blue100;
+        case 'returned':
+          return amber100;
+        case 'disposed':
+          return red100;
+        case 'expired':
+          return orange100;
+        case 'pending supply':
+          return blue100;
+        case 'draft':
+          return const Color(0xFFF3F4F6);
+        default:
+          return const Color(0xFFF3F4F6);
+      }
     }
   }
 }

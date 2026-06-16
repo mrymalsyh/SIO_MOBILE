@@ -6,6 +6,7 @@ import '../login_screen.dart';
 import '../../services/printer_service.dart';
 import '../../services/bluetooth_service.dart';
 import '../../utils/storage_helper.dart';
+import '../../theme/app_theme.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -54,28 +55,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColors>()!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      backgroundColor: colors.bg,
+      appBar: AppBar(
+        title: const Text('Settings'),
+        backgroundColor: colors.bg,
+      ),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
           Card(
             elevation: 1.5,
+            color: colors.surface,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: colors.line),
             ),
             child: Column(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.print, color: Colors.indigo),
-                  title: const Text('Bluetooth Printer Setup'),
-                  subtitle: const Text('Pair and configure your printer'),
+                  leading: Icon(Icons.print, color: colors.accent),
+                  title: Text('Bluetooth Printer Setup', style: TextStyle(color: colors.text)),
+                  subtitle: Text('Pair and configure your printer', style: TextStyle(color: colors.muted)),
                   onTap: _openPrinterSetup,
                 ),
-                const Divider(height: 1),
+                Divider(height: 1, color: colors.line),
                 ListTile(
                   leading: const Icon(Icons.logout, color: Colors.redAccent),
-                  title: const Text('Logout'),
+                  title: Text('Logout', style: TextStyle(color: colors.text)),
                   onTap: _logout,
                 ),
               ],
@@ -160,9 +168,12 @@ class _BluetoothPrinterSetupScreenState
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColors>()!;
     return Scaffold(
+      backgroundColor: colors.bg,
       appBar: AppBar(
         title: const Text('Bluetooth Printer Setup'),
+        backgroundColor: colors.bg,
         actions: [
           if (_savedName != null)
             Padding(
@@ -170,85 +181,100 @@ class _BluetoothPrinterSetupScreenState
               child: Center(
                 child: Text(
                   'Saved: $_savedName',
-                  style: const TextStyle(fontSize: 13, color: Colors.white70),
+                  style: TextStyle(fontSize: 13, color: colors.muted),
                 ),
               ),
             ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  "Available Printers",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                IconButton(
-                  onPressed: _loadPairedPrinters,
-                  icon: const Icon(Icons.refresh),
-                  tooltip: 'Refresh devices',
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            if (_scanning)
-              const Center(child: CircularProgressIndicator())
-            else if (_devices.isEmpty)
-              const Center(child: Text('No paired Bluetooth printers found.'))
-            else
-              Expanded(
-                child: ListView.builder(
-                  itemCount: _devices.length,
-                  itemBuilder: (context, index) {
-                    final d = _devices[index];
-                    final connected =
-                        _connectedDevice != null &&
-                        d.address == _connectedDevice?.address;
+      body: SafeArea(
+        bottom: true,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Available Printers",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colors.text),
+                  ),
+                  IconButton(
+                    onPressed: _loadPairedPrinters,
+                    icon: Icon(Icons.refresh, color: colors.muted),
+                    tooltip: 'Refresh devices',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              if (_scanning)
+                Center(child: CircularProgressIndicator(color: colors.accent))
+              else if (_devices.isEmpty)
+                Center(child: Text('No paired Bluetooth printers found.', style: TextStyle(color: colors.muted)))
+              else
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: _devices.length,
+                    itemBuilder: (context, index) {
+                      final d = _devices[index];
+                      final connected =
+                          _connectedDevice != null &&
+                          d.address == _connectedDevice?.address;
 
-                    return Card(
-                      color: connected
-                          ? Colors.indigo.withValues(alpha: 0.1)
-                          : Colors.white,
-                      child: ListTile(
-                        leading: const Icon(Icons.print),
-                        title: Text(d.name ?? 'Unknown'),
-                        subtitle: Text(d.address ?? ''),
-                        trailing: connected
-                            ? const Icon(
-                                Icons.check_circle,
-                                color: Colors.green,
-                              )
-                            : ElevatedButton(
-                                onPressed: () => _connectToDevice(d),
-                                child: const Text('Connect'),
-                              ),
-                      ),
-                    );
-                  },
+                      return Card(
+                        color: connected
+                            ? colors.accent.withValues(alpha: 0.1)
+                            : colors.surface,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(color: colors.line),
+                        ),
+                        child: ListTile(
+                          leading: Icon(Icons.print, color: colors.text),
+                          title: Text(d.name ?? 'Unknown', style: TextStyle(color: colors.text)),
+                          subtitle: Text(d.address ?? '', style: TextStyle(color: colors.muted)),
+                          trailing: connected
+                              ? const Icon(
+                                  Icons.check_circle,
+                                  color: Colors.green,
+                                )
+                              : ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: colors.accent,
+                                    foregroundColor: colors.accentForeground,
+                                  ),
+                                  onPressed: () => _connectToDevice(d),
+                                  child: const Text('Connect'),
+                                ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
-            const SizedBox(height: 20),
-            if (_connectedDevice != null)
-              Center(
-                child: FilledButton.icon(
-                  icon: const Icon(Icons.print),
-                  label: const Text('Test Print'),
-                  onPressed: _testPrint,
+              const SizedBox(height: 20),
+              if (_connectedDevice != null)
+                Center(
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: colors.accent,
+                      foregroundColor: colors.accentForeground,
+                    ),
+                    icon: const Icon(Icons.print),
+                    label: const Text('Test Print'),
+                    onPressed: _testPrint,
+                  ),
                 ),
-              ),
-            if (_connectedDevice != null)
-              Center(
-                child: TextButton(
-                  onPressed: _disconnectPrinter,
-                  child: const Text('Disconnect'),
+              if (_connectedDevice != null)
+                Center(
+                  child: TextButton(
+                    onPressed: _disconnectPrinter,
+                    child: Text('Disconnect', style: TextStyle(color: colors.text)),
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
