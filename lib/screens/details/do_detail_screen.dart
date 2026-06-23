@@ -25,7 +25,7 @@ class _DoDetailScreenState extends State<DoDetailScreen> {
 
   Future<void> _load() async {
     setState(() => _loading = true);
-    final res = await _api.getDoLots(context, doId: widget.doId);
+    final res = await _api.getDoSerials(context, doId: widget.doId);
     // Debug: print('🔍 API Response: $res');
 
     setState(() {

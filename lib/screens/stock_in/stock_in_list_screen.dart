@@ -4,7 +4,6 @@ import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
 import 'widgets/do_card.dart';
 import 'stock_in_detail_screen.dart';
-import 'stock_in_create_screen.dart';
 import '../../main.dart';
 
 /// Stock-In List Screen
@@ -111,15 +110,7 @@ class _StockInListScreenState extends State<StockInListScreen> {
     _load();
   }
 
-  void _openCreate() async {
-    final result = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => const StockInCreateScreen()),
-    );
-    if (result == true) {
-      _page = 1;
-      _load();
-    }
-  }
+
 
   void _openDetail(Map<String, dynamic> group) async {
     final result = await Navigator.of(context).push<bool>(
@@ -267,21 +258,6 @@ class _StockInListScreenState extends State<StockInListScreen> {
                   ),
           ),
         ],
-      ),
-      floatingActionButton: SizedBox(
-        width: 140,
-        height: 48,
-        child: FloatingActionButton.extended(
-          onPressed: _openCreate,
-          backgroundColor: colors.accent,
-          foregroundColor: colors.accentForeground,
-          elevation: 4,
-          icon: const Icon(Icons.add, size: 20),
-          label: const Text(
-            'Stock-In',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-          ),
-        ),
       ),
     );
   }
