@@ -26,8 +26,8 @@ class PrinterService {
       String line1 = productName.substring(0, splitIndex).trim();
       String line2 = productName.substring(splitIndex).trim();
 
-      buffer.writeln('TEXT 40,30,"1",0,1,2,"$line1"');
-      buffer.writeln('TEXT 40,65,"1",0,1,2,"$line2"');
+      buffer.writeln('TEXT 40,30,"1",0,1,1,"$line1"');
+      buffer.writeln('TEXT 40,65,"1",0,1,1,"$line2"');
     }
 
     buffer.writeln('BARCODE 30,100,"128",60,0,0,1,1,"$serialNumber"');
