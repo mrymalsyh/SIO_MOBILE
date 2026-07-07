@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/api_service.dart';
 import '../../services/printer_service.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/storage_helper.dart';
 
 /// Stock-In Detail Screen matching SIO web frontend styling
 class StockInDetailScreen extends StatefulWidget {
@@ -30,6 +32,60 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
   List<Map<String, dynamic>> _rows = [];
   Map<String, dynamic> _header = {};
 
+  String _formatDate(String dateStr) {
+    if (dateStr == '-') return '-';
+    try {
+      final parsed = DateTime.tryParse(dateStr);
+      if (parsed != null) {
+        return DateFormat('20yy-MM-dd').format(parsed);
+      }
+      final dateOnly = dateStr.split(' ').first.split('T').first;
+      final parts = dateOnly.split('-');
+      if (parts.length == 3) {
+        final yyyy = parts[0];
+        final mm = parts[1];
+        final dd = parts[2];
+        final yy = yyyy.length >= 2 ? yyyy.substring(yyyy.length - 2) : yyyy;
+        return '20$yy-$mm-$dd';
+      }
+    } catch (_) {}
+    return dateStr;
+  }
+
+  String _getStatusName(String dbStatus) {
+    final status = dbStatus.trim().toLowerCase();
+    if (status == 'in_stock' || status == 'in stock' || status == 'available') {
+      return 'AVAILABLE';
+    }
+    if (status == 'received') {
+      return 'PENDING QC';
+    }
+    if (dbStatus.isEmpty) return 'Unknown';
+    return dbStatus[0].toUpperCase() + dbStatus.substring(1).toLowerCase();
+  }
+
+  Color _getStatusColor(String dbStatus) {
+    final status = dbStatus.trim().toLowerCase();
+    if (status == 'in_stock' || status == 'in stock' || status == 'available') {
+      return const Color(0xFF22C55E);
+    }
+    if (status == 'received') {
+      return const Color(0xFFF59E0B);
+    }
+    return AppTheme.statusColor(dbStatus);
+  }
+
+  Color _getStatusBgColor(String dbStatus, bool isDark) {
+    final status = dbStatus.trim().toLowerCase();
+    if (status == 'in_stock' || status == 'in stock' || status == 'available') {
+      return isDark ? const Color.fromRGBO(34, 197, 94, 0.15) : const Color(0xFFDCFCE7);
+    }
+    if (status == 'received') {
+      return isDark ? const Color.fromRGBO(245, 158, 11, 0.15) : const Color(0xFFFEF3C7);
+    }
+    return AppTheme.statusBgColor(dbStatus, isDark);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -53,8 +109,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
         _header = {
           'DO_Number': data['stock_in_number'] ?? widget.stockInNumber,
           'SupplierName': data['supplier_name'] ?? widget.supplierName,
-          'ReceiveDate': data['stock_in_date'] ?? widget.receiveDate,
-          'PIC': '-', // Add PIC if SIO_BE adds it later
+          'ReceiveDate': data['stock_in_date'] ?? widget.receiveDate
         };
       }
       _loading = false;
@@ -118,8 +173,6 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
           generatedItems.add({
             'product_name': productName,
             'product_code': productCode,
-            'expiry_date':
-                '', // SIO_BE doesn't seem to have expiry at item level
             'serial_number': item['serial_number'] ?? '',
           });
         }
@@ -131,11 +184,35 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
       return;
     }
 
-    try {
-      await PrinterService.printAllSerials(context, generatedItems);
-    } catch (e) {
-      _showSnack('Print failed: $e');
-    }
+    final printerInfo = await StorageHelper.getSavedPrinter();
+    final printerName = printerInfo != null ? printerInfo['name'] : 'Printer Not Connected';
+
+    if (!mounted) return;
+
+    final colors = Theme.of(context).extension<AppColors>()!;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: colors.bg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return _PrintSelectionSheet(
+          items: generatedItems,
+          printerName: printerName ?? 'Not Connected',
+          onPrint: (selectedItems) async {
+            Navigator.pop(context);
+            try {
+              await PrinterService.printAllSerials(context, selectedItems);
+            } catch (e) {
+              _showSnack('Print failed: $e');
+            }
+          },
+        );
+      },
+    );
   }
 
   void _showSnack(String msg) {
@@ -205,7 +282,7 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
               _headerItem(
                 context,
                 Icons.description_outlined,
-                'DO: ${widget.stockInNumber}',
+                'STOCK IN NUMBER: ${widget.stockInNumber}',
               ),
               _headerItem(
                 context,
@@ -215,13 +292,8 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
               _headerItem(
                 context,
                 Icons.calendar_today_outlined,
-                _header['ReceiveDate'] ?? widget.receiveDate,
-              ),
-              _headerItem(
-                context,
-                Icons.person_outline,
-                'PIC: ${_header['PIC'] ?? '-'}',
-              ),
+                _formatDate(_header['ReceiveDate'] ?? widget.receiveDate),
+              )
             ],
           ),
           const SizedBox(height: 16),
@@ -423,14 +495,6 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
                 ),
                 Expanded(
                   flex: 2,
-                  child: Text('Batch', style: _tableHeaderStyle(context)),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text('Expiry', style: _tableHeaderStyle(context)),
-                ),
-                Expanded(
-                  flex: 2,
                   child: Text(
                     'Status',
                     style: _tableHeaderStyle(context),
@@ -469,20 +533,6 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
                     ),
                     Expanded(
                       flex: 2,
-                      child: Text(
-                        batchDisplay,
-                        style: TextStyle(fontSize: 13, color: colors.text),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        '-',
-                        style: TextStyle(fontSize: 13, color: colors.text),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 2,
                       child: Center(
                         child: Container(
                           padding: const EdgeInsets.symmetric(
@@ -490,15 +540,15 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: AppTheme.statusBgColor(status, isDark),
+                            color: _getStatusBgColor(status, isDark),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            status,
+                            _getStatusName(status),
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
-                              color: AppTheme.statusColor(status),
+                              color: _getStatusColor(status),
                             ),
                           ),
                         ),
@@ -528,6 +578,247 @@ class _StockInDetailScreenState extends State<StockInDetailScreen> {
       fontWeight: FontWeight.w600,
       color: colors.muted,
       letterSpacing: 0.3,
+    );
+  }
+}
+
+class _PrintSelectionSheet extends StatefulWidget {
+  final List<Map<String, dynamic>> items;
+  final String printerName;
+  final Function(List<Map<String, dynamic>>) onPrint;
+
+  const _PrintSelectionSheet({
+    super.key,
+    required this.items,
+    required this.printerName,
+    required this.onPrint,
+  });
+
+  @override
+  State<_PrintSelectionSheet> createState() => _PrintSelectionSheetState();
+}
+
+class _PrintSelectionSheetState extends State<_PrintSelectionSheet> {
+  late List<bool> _selected;
+  bool _selectAll = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = List<bool>.filled(widget.items.length, true);
+  }
+
+  void _toggleSelectAll(bool? val) {
+    setState(() {
+      _selectAll = val ?? false;
+      _selected = List<bool>.filled(widget.items.length, _selectAll);
+    });
+  }
+
+  void _updateSelectAllState() {
+    setState(() {
+      _selectAll = _selected.every((s) => s);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColors>()!;
+    final selectedCount = _selected.where((s) => s).length;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      minChildSize: 0.4,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (context, scrollController) {
+        return Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: colors.line)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Select Items to Print',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: colors.text,
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close, color: colors.muted),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.print, size: 16, color: colors.muted),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Printer: ${widget.printerName}',
+                        style: TextStyle(color: colors.muted, fontSize: 13),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Select All row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: Checkbox(
+                              value: _selectAll,
+                              onChanged: _toggleSelectAll,
+                              activeColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : colors.accent,
+                              checkColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Select All',
+                            style: TextStyle(color: colors.text, fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                      TextButton(
+                        onPressed: selectedCount > 0
+                            ? () {
+                                setState(() {
+                                  _selected = List<bool>.filled(widget.items.length, false);
+                                  _selectAll = false;
+                                });
+                              }
+                            : null,
+                        style: TextButton.styleFrom(
+                          foregroundColor: Theme.of(context).colorScheme.error,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const Text(
+                          'Cancel Selection',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            
+            // List
+            Expanded(
+              child: ListView.builder(
+                controller: scrollController,
+                itemCount: widget.items.length,
+                itemBuilder: (context, index) {
+                  final item = widget.items[index];
+                  return CheckboxListTile(
+                    value: _selected[index],
+                    onChanged: (val) {
+                      setState(() {
+                        _selected[index] = val ?? false;
+                      });
+                      _updateSelectAllState();
+                    },
+                    title: Text(
+                      item['product_name'] ?? '',
+                      style: TextStyle(color: colors.text, fontSize: 14),
+                    ),
+                    subtitle: Text(
+                      'SN: ${item['serial_number']}',
+                      style: TextStyle(color: colors.muted, fontSize: 12),
+                    ),
+                    activeColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : colors.accent,
+                    checkColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                  );
+                },
+              ),
+            ),
+            
+            // Bottom Actions
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: colors.surface,
+                border: Border(top: BorderSide(color: colors.line)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: colors.accent,
+                        side: BorderSide(color: colors.accent),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () {
+                        widget.onPrint(widget.items);
+                      },
+                      child: const Text('Print All'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colors.accent,
+                        foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: selectedCount > 0
+                          ? () {
+                              final selectedItems = <Map<String, dynamic>>[];
+                              for (int i = 0; i < widget.items.length; i++) {
+                                if (_selected[i]) {
+                                  selectedItems.add(widget.items[i]);
+                                }
+                              }
+                              widget.onPrint(selectedItems);
+                            }
+                          : null,
+                      child: Text('Print Selected ($selectedCount)'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

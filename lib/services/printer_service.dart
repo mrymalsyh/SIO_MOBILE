@@ -15,8 +15,8 @@ class PrinterService {
     buffer.writeln('REFERENCE 0,0');
     buffer.writeln('CLS');
 
-    if (productName.length < 12) {
-      buffer.writeln('TEXT 40,20,"2",0,1,1,"$productName"');
+    if (productName.length < 14) {
+      buffer.writeln('TEXT 53,50,"2",0,1,1,"$productName"');
     } else {
       int mid = productName.length ~/ 2;
       int splitIndex = productName.lastIndexOf(' ', mid + 5);
@@ -26,12 +26,12 @@ class PrinterService {
       String line1 = productName.substring(0, splitIndex).trim();
       String line2 = productName.substring(splitIndex).trim();
 
-      buffer.writeln('TEXT 40,30,"1",0,1,2,"$line1"');
-      buffer.writeln('TEXT 40,65,"1",0,1,2,"$line2"');
+      buffer.writeln('TEXT 53,30,"1",0,1,2,"$line1"');
+      buffer.writeln('TEXT 53,65,"1",0,1,2,"$line2"');
     }
 
-    buffer.writeln('BARCODE 30,100,"128",60,0,0,1,1,"$serialNumber"');
-    buffer.writeln('TEXT 50,170,"1",0,1,2,"$serialNumber"');
+    buffer.writeln('BARCODE 53,100,"128",60,0,0,1,1,"$serialNumber"');
+    buffer.writeln('TEXT 53,170,"1",0,1,2,"$serialNumber"');
     buffer.writeln('PRINT 1');
 
     return buffer.toString();
@@ -40,7 +40,7 @@ class PrinterService {
   /// Test print
   static Future<void> testPrint(BuildContext context) async {
     try {
-      const med = 'MARYAM';
+      const med = 'MARYAM gsghkshigh';
       const serial = 'TP80-USBBT-20260615-0001';
 
       final cmd = buildTSPLLabel(
