@@ -51,7 +51,7 @@ class PrinterService {
   static Future<void> testPrint(BuildContext context) async {
     try {
       const med = 'Mysztech';
-      const serial = 'TP80-USBBT-20260615-0001';
+         const serial = 'TP80-USBBT-20260615-0001';
 
       final cmd = buildTSPLLabel(
         productName: med,
