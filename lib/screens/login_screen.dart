@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+
+import '../main.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
-import '../main.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -66,12 +67,14 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final viewInsets = MediaQuery.of(context).viewInsets;
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: Container(
         decoration: BoxDecoration(
           gradient: RadialGradient(
-            center: const Alignment(-0.72, -0.88), // ~14% 6%
+            center: const Alignment(-0.72, -0.88),
             radius: 1.5,
             colors: [
               isDark ? const Color(0xFF18181B) : const Color(0xFFF4F4F5),
@@ -82,123 +85,134 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         child: Stack(
           children: [
-            Center(
-              child: AnimatedOpacity(
-                opacity: _fade ? 1 : 0,
-                duration: const Duration(milliseconds: 600),
-                child: Transform.translate(
-                  offset: Offset(0, _fade ? 0 : 18),
-                  child: Container(
-                    width: 360,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 30,
+            SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      24,
+                      16,
+                      24 + viewInsets.bottom,
                     ),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: colors.panel,
-                      border: Border.all(
-                        color: colors.line,
-                        width: 1,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight - 48,
                       ),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Image.asset(
-                          "assets/SIO Logo/3.png",
-                          height: 70,
-                          color: isDark ? Colors.white : Colors.black,
-                        ),
-                        const SizedBox(height: 12),
-
-                        Text(
-                          "Stock Inventory Operation",
-                          style: TextStyle(
-                            color: colors.text,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 5),
-                        Text(
-                          "Sign in to continue",
-                          style: TextStyle(
-                            color: colors.muted,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 25),
-
-                        // --- EMAIL ---
-                        _inputLabel("Email Address", colors),
-                        _inputField(
-                          controller: _email,
-                          hint: "you@example.com",
-                          colors: colors,
-                        ),
-                        const SizedBox(height: 18),
-
-                        // --- PASSWORD ---
-                        _inputLabel("Password", colors),
-                        _inputPass(colors),
-                        const SizedBox(height: 10),
-
-                        // --- REMEMBER CHECKBOX ---
-                        Row(
-                          children: [
-                            Checkbox(
-                              value: _remember,
-                              onChanged: (v) =>
-                                  setState(() => _remember = v!),
-                              activeColor: colors.accent,
-                              checkColor: colors.accentForeground,
-                              side: BorderSide(color: colors.line),
-                            ),
-                            Text(
-                              "Remember me",
-                              style: TextStyle(
-                                color: colors.text,
-                                fontSize: 14,
+                      child: Center(
+                        child: AnimatedOpacity(
+                          opacity: _fade ? 1 : 0,
+                          duration: const Duration(milliseconds: 600),
+                          child: Transform.translate(
+                            offset: Offset(0, _fade ? 0 : 18),
+                            child: Container(
+                              width: 360,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 30,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                color: colors.panel,
+                                border: Border.all(
+                                  color: colors.line,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Image.asset(
+                                    'assets/SIO Logo/3.png',
+                                    height: 70,
+                                    color: isDark ? Colors.white : Colors.black,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'Stock Inventory Operation',
+                                    style: TextStyle(
+                                      color: colors.text,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 5),
+                                  Text(
+                                    'Sign in to continue',
+                                    style: TextStyle(
+                                      color: colors.muted,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 25),
+                                  _inputLabel('Email Address', colors),
+                                  _inputField(
+                                    controller: _email,
+                                    hint: 'you@example.com',
+                                    colors: colors,
+                                  ),
+                                  const SizedBox(height: 18),
+                                  _inputLabel('Password', colors),
+                                  _inputPass(colors),
+                                  const SizedBox(height: 10),
+                                  Row(
+                                    children: [
+                                      Checkbox(
+                                        value: _remember,
+                                        onChanged: (v) =>
+                                            setState(() => _remember = v!),
+                                        activeColor: colors.accent,
+                                        checkColor: colors.accentForeground,
+                                        side: BorderSide(color: colors.line),
+                                      ),
+                                      Text(
+                                        'Remember me',
+                                        style: TextStyle(
+                                          color: colors.text,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 14),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 48,
+                                    child: ElevatedButton(
+                                      onPressed: _loading ? null : _onLogin,
+                                      child: _loading
+                                          ? SizedBox(
+                                              width: 22,
+                                              height: 22,
+                                              child: CircularProgressIndicator(
+                                                color: colors.accentForeground,
+                                                strokeWidth: 2,
+                                              ),
+                                            )
+                                          : const Text('Sign In'),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 22),
+                                  Text(
+                                    '© 2026 SIO - Stock Inventory Operation System',
+                                    style: TextStyle(
+                                      color: colors.muted,
+                                      fontSize: 12.5,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 14),
-
-                        // --- LOGIN BUTTON ---
-                        SizedBox(
-                          width: double.infinity,
-                          height: 48,
-                          child: ElevatedButton(
-                            onPressed: _loading ? null : _onLogin,
-                            child: _loading
-                                ? SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: CircularProgressIndicator(
-                                      color: colors.accentForeground,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Text("Sign In"),
                           ),
                         ),
-                        const SizedBox(height: 22),
-
-                        Text(
-                          "© 2026 SIO - Stock Invetory Operation System",
-                          style: TextStyle(
-                            color: colors.muted,
-                            fontSize: 12.5,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
             ),
             Positioned(
@@ -223,7 +237,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _inputLabel(String text, AppColors colors) => Align(
     alignment: Alignment.centerLeft,
     child: Padding(
-      padding: const EdgeInsets.only(bottom: 6.0),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Text(
         text,
         style: TextStyle(
@@ -253,7 +267,7 @@ class _LoginScreenState extends State<LoginScreen> {
       controller: _password,
       obscureText: !_showPassword,
       style: TextStyle(color: colors.text),
-      decoration: _inputDecoration("••••••••", colors).copyWith(
+      decoration: _inputDecoration('••••••••', colors).copyWith(
         suffixIcon: IconButton(
           icon: Icon(
             _showPassword ? Icons.visibility_off : Icons.visibility,

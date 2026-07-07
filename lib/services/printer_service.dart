@@ -2,10 +2,20 @@ import 'package:flutter/material.dart';
 import '../services/bluetooth_service.dart';
 
 class PrinterService {
+  static String _sanitizeTsplText(String value) {
+    return value
+        .replaceAll('"', "'")
+        .replaceAll(RegExp(r'[\r\n\t]+'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
   static String buildTSPLLabel({
     required String productName,
     required String serialNumber,
   }) {
+    final safeProductName = _sanitizeTsplText(productName);
+    final safeSerialNumber = _sanitizeTsplText(serialNumber);
     final buffer = StringBuffer();
     buffer.writeln('SIZE 40 mm,30 mm');
     buffer.writeln('GAP 2 mm,0');
@@ -15,23 +25,23 @@ class PrinterService {
     buffer.writeln('REFERENCE 0,0');
     buffer.writeln('CLS');
 
-    if (productName.length < 12) {
-      buffer.writeln('TEXT 40,20,"2",0,1,1,"$productName"');
+    if (safeProductName.length < 12) {
+      buffer.writeln('TEXT 48,20,"1",0,1,2,"$safeProductName"');
     } else {
-      int mid = productName.length ~/ 2;
-      int splitIndex = productName.lastIndexOf(' ', mid + 5);
+      int mid = safeProductName.length ~/ 2;
+      int splitIndex = safeProductName.lastIndexOf(' ', mid + 5);
       if (splitIndex <= 0) {
         splitIndex = mid;
       }
-      String line1 = productName.substring(0, splitIndex).trim();
-      String line2 = productName.substring(splitIndex).trim();
+      String line1 = safeProductName.substring(0, splitIndex).trim();
+      String line2 = safeProductName.substring(splitIndex).trim();
 
-      buffer.writeln('TEXT 40,30,"1",0,1,1,"$line1"');
-      buffer.writeln('TEXT 40,65,"1",0,1,1,"$line2"');
+      buffer.writeln('TEXT 48,30,"1",0,1,2,"$line1"');
+      buffer.writeln('TEXT 48,65,"1",0,1,2,"$line2"');
     }
 
-    buffer.writeln('BARCODE 30,100,"128",60,0,0,1,1,"$serialNumber"');
-    buffer.writeln('TEXT 50,170,"1",0,1,2,"$serialNumber"');
+    buffer.writeln('BARCODE 38,100,"128",60,0,0,1,1,"$safeSerialNumber"');
+    buffer.writeln('TEXT 58,170,"1",0,1,2,"$safeSerialNumber"');
     buffer.writeln('PRINT 1');
 
     return buffer.toString();
@@ -40,7 +50,7 @@ class PrinterService {
   /// Test print
   static Future<void> testPrint(BuildContext context) async {
     try {
-      const med = 'MARYAM';
+      const med = 'Mysztech';
       const serial = 'TP80-USBBT-20260615-0001';
 
       final cmd = buildTSPLLabel(
