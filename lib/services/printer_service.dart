@@ -26,7 +26,7 @@ class PrinterService {
     buffer.writeln('CLS');
 
     if (safeProductName.length < 12) {
-      buffer.writeln('TEXT 48,20,"1",0,1,2,"$safeProductName"');
+      buffer.writeln('TEXT 48,55,"1",0,1,2,"$safeProductName"');
     } else {
       int mid = safeProductName.length ~/ 2;
       int splitIndex = safeProductName.lastIndexOf(' ', mid + 5);
