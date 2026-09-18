@@ -18,12 +18,26 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _remember = false;
   bool _loading = false;
   bool _fade = false;
+  bool _sessionMessageShown = false;
 
   @override
   void initState() {
     super.initState();
     Future.delayed(const Duration(milliseconds: 200), () {
       if (mounted) setState(() => _fade = true);
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final message = ModalRoute.of(context)?.settings.arguments;
+    if (_sessionMessageShown || message is! String || message.isEmpty) return;
+
+    _sessionMessageShown = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _showToast(message);
     });
   }
 

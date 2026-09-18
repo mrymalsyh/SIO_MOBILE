@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'app_navigator.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_navigation_screen.dart';
@@ -25,10 +26,13 @@ class MyAppState extends State<MyApp> {
   void toggleTheme() {
     setState(() {
       if (_themeMode == ThemeMode.system) {
-        final isDark = MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+        final isDark =
+            MediaQuery.platformBrightnessOf(context) == Brightness.dark;
         _themeMode = isDark ? ThemeMode.light : ThemeMode.dark;
       } else {
-        _themeMode = _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+        _themeMode = _themeMode == ThemeMode.light
+            ? ThemeMode.dark
+            : ThemeMode.light;
       }
     });
   }
@@ -37,6 +41,7 @@ class MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'SIO Mobile',
+      navigatorKey: rootNavigatorKey,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: _themeMode,

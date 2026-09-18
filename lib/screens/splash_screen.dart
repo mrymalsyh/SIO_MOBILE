@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -32,12 +32,11 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _checkLogin() async {
     await Future.delayed(const Duration(seconds: 2));
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
+    final hasValidSession = await ApiService().hasValidSession();
 
     if (!mounted) return;
 
-    if (token != null && token.isNotEmpty) {
+    if (hasValidSession) {
       Navigator.pushReplacementNamed(context, '/home');
     } else {
       Navigator.pushReplacementNamed(context, '/login');
@@ -83,10 +82,7 @@ class _SplashScreenState extends State<SplashScreen>
 
               const SizedBox(height: 24),
 
-              CircularProgressIndicator(
-                strokeWidth: 3,
-                color: colors.accent,
-              ),
+              CircularProgressIndicator(strokeWidth: 3, color: colors.accent),
 
               const SizedBox(height: 12),
 

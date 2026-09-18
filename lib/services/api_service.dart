@@ -5,11 +5,14 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../app_navigator.dart';
+
 class ApiService {
-  static const String _baseUrl = 'https://sio-be.mysztechnology.com';
+  static const String _baseUrl = 'https://sio-mobile.mysztechnology.com';
   static const String _apiBaseUrl = '$_baseUrl/api';
   static const int _stockInPageSize = 15;
   static const int _bulkFetchSize = 500;
+  static Future<void>? _sessionExpiryInProgress;
 
   ApiService()
     : _dio = Dio(
@@ -84,7 +87,6 @@ class ApiService {
   }
 
   void _snack(BuildContext ctx, String msg) {
-    
     ScaffoldMessenger.of(ctx).showSnackBar(
       SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating),
     );
@@ -145,6 +147,64 @@ class ApiService {
     final token = prefs.getString('token') ?? '';
 
     return token.isEmpty ? {} : {'Authorization': 'Bearer $token'};
+  }
+
+  /// Checks the persisted bearer token before restoring a signed-in session.
+  ///
+  /// A network error does not clear the session: it is not evidence that the
+  /// token has expired, and the normal request flow will retry once online.
+  Future<bool> hasValidSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    if ((prefs.getString('token') ?? '').isEmpty) return false;
+
+    try {
+      await _mainDio.get(
+        '/me',
+        options: Options(headers: await _authHeaders()),
+      );
+      return true;
+    } on DioException catch (error) {
+      if (error.response?.statusCode == 401) {
+        await _clearStoredSession();
+        return false;
+      }
+
+      // Do not force a logout for a temporary network/server failure or a
+      // permission error unrelated to token validity.
+      return true;
+    }
+  }
+
+  Future<void> _clearStoredSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+    await prefs.remove('user_role');
+    await prefs.remove('user_name');
+    await prefs.remove('user_id');
+  }
+
+  /// Clears an expired/revoked session and ensures every protected screen
+  /// returns to the sign-in route instead of rendering an empty data state.
+  Future<bool> _handleUnauthorized(DioException error) async {
+    if (error.response?.statusCode != 401) return false;
+
+    _sessionExpiryInProgress ??= _expireSession();
+    await _sessionExpiryInProgress;
+    return true;
+  }
+
+  Future<void> _expireSession() async {
+    try {
+      await _clearStoredSession();
+
+      rootNavigatorKey.currentState?.pushNamedAndRemoveUntil(
+        '/login',
+        (route) => false,
+        arguments: 'Your session has expired. Please sign in again.',
+      );
+    } finally {
+      _sessionExpiryInProgress = null;
+    }
   }
 
   bool _isWithinDate(String? dateValue, String? fromDate, String? toDate) {
@@ -223,7 +283,9 @@ class ApiService {
     return (stockItem['is_available'] == true) ? 'Available' : 'Unavailable';
   }
 
-  List<Map<String, dynamic>> _toLegacySerials(Map<String, dynamic> stockInData) {
+  List<Map<String, dynamic>> _toLegacySerials(
+    Map<String, dynamic> stockInData,
+  ) {
     final lines = _mapList(stockInData['lines']);
     final serials = <Map<String, dynamic>>[];
 
@@ -299,16 +361,12 @@ class ApiService {
 
   Future<void> logout() async {
     final headers = await _authHeaders();
-    final prefs = await SharedPreferences.getInstance();
 
     try {
       await _dio.post('/logout', options: Options(headers: headers));
     } catch (_) {}
 
-    await prefs.remove('token');
-    await prefs.remove('user_role');
-    await prefs.remove('user_name');
-    await prefs.remove('user_id');
+    await _clearStoredSession();
   }
 
   Future<List<Map<String, dynamic>>> getStockInList(
@@ -370,6 +428,9 @@ class ApiService {
 
       return {'header': header, 'serials': serials};
     } on DioException catch (e) {
+      if (await _handleUnauthorized(e)) {
+        return {'header': {}, 'serials': []};
+      }
       _snack(context, _errorMessage(e, 'Failed to load DO details.'));
       return {'header': {}, 'serials': []};
     }
@@ -442,6 +503,9 @@ class ApiService {
         'last_page': lastPage,
       };
     } on DioException catch (e) {
+      if (await _handleUnauthorized(e)) {
+        return {'data': [], 'current_page': 1, 'last_page': 1};
+      }
       _snack(context, _errorMessage(e, 'Failed to load Stock-In list.'));
       return {'data': [], 'current_page': 1, 'last_page': 1};
     }
@@ -469,6 +533,7 @@ class ApiService {
       );
       return _mapPayload(res.data);
     } on DioException catch (e) {
+      if (await _handleUnauthorized(e)) return null;
       _snack(context, _errorMessage(e, 'Failed to load DO details.'));
       return null;
     }
@@ -514,6 +579,7 @@ class ApiService {
       );
       return _mapPayload(res.data);
     } on DioException catch (e) {
+      if (await _handleUnauthorized(e)) return null;
       _snack(context, _errorMessage(e, 'Failed to create Stock-In.'));
       return null;
     }
@@ -560,6 +626,9 @@ class ApiService {
           'Status': supplier['status'] ?? '',
         };
       }).toList();
+    } on DioException catch (e) {
+      if (await _handleUnauthorized(e)) return [];
+      return [];
     } catch (_) {
       return [];
     }
@@ -620,6 +689,9 @@ class ApiService {
           'RequiresSerialNumber': product['requires_serial_number'] == true,
         };
       }).toList();
+    } on DioException catch (e) {
+      if (await _handleUnauthorized(e)) return [];
+      return [];
     } catch (_) {
       return [];
     }
@@ -634,6 +706,9 @@ class ApiService {
     try {
       final res = await _mainDio.get('/me', options: Options(headers: headers));
       return _mapPayload(res.data);
+    } on DioException catch (e) {
+      if (await _handleUnauthorized(e)) return null;
+      return null;
     } catch (_) {
       return null;
     }
